@@ -62,7 +62,7 @@
             <span class="sidebar-text">Dashboard</span>
         </a>
 
-        <a href="#" class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-[#c5d5e8] text-sm font-medium transition-all mx-2 rounded-lg mb-0.5 {{ $currentRoute === 'sekolah' ? 'active' : '' }}">
+        <a href="{{ route('sekolah.index') }}" class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-[#c5d5e8] text-sm font-medium transition-all mx-2 rounded-lg mb-0.5 {{ $currentRoute === 'sekolah' ? 'active' : '' }}">
             <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10h1v11H4V10zm14 0h1v11h-1V10zm-7 0h1v11h-1V10z"/>
             </svg>
@@ -130,8 +130,12 @@
         <div class="relative">
             <button onclick="toggleDropdown()" class="flex items-center gap-2.5 hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors focus:outline-none" id="user-btn">
                 {{-- Avatar --}}
-                <div class="w-8 h-8 rounded-full bg-[#162040] flex items-center justify-center flex-shrink-0">
-                    <span class="text-white text-xs font-semibold">{{ auth()->user()->initials }}</span>
+                <div class="w-8 h-8 rounded-full bg-[#162040] overflow-hidden flex items-center justify-center flex-shrink-0">
+                    @if(auth()->user()->avatar_url)
+                        <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="w-full h-full object-cover">
+                    @else
+                        <span class="text-white text-xs font-semibold">{{ auth()->user()->initials }}</span>
+                    @endif
                 </div>
                 <div class="hidden sm:block text-left">
                     <p class="text-sm font-semibold text-gray-700 leading-tight">{{ auth()->user()->name }}</p>
@@ -147,8 +151,12 @@
                 {{-- User Info --}}
                 <div class="px-4 py-3 border-b border-gray-100">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-[#162040] flex items-center justify-center flex-shrink-0">
-                            <span class="text-white text-sm font-semibold">{{ auth()->user()->initials }}</span>
+                        <div class="w-10 h-10 rounded-full bg-[#162040] overflow-hidden flex items-center justify-center flex-shrink-0">
+                            @if(auth()->user()->avatar_url)
+                                <img src="{{ auth()->user()->avatar_url }}" alt="Avatar" class="w-full h-full object-cover">
+                            @else
+                                <span class="text-white text-sm font-semibold">{{ auth()->user()->initials }}</span>
+                            @endif
                         </div>
                         <div class="min-w-0">
                             <p class="text-sm font-semibold text-gray-800 truncate">{{ auth()->user()->name }}</p>
@@ -160,7 +168,7 @@
                     </div>
                 </div>
                 {{-- Menu Items --}}
-                <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors">
+                <a href="{{ route('profile.show') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                     </svg>

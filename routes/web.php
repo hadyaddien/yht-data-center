@@ -3,6 +3,13 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SekolahController;
+use App\Http\Controllers\ProgramPendidikanController;
+use App\Http\Controllers\TeknologiController;
+use App\Http\Controllers\SarprasController;
+use App\Http\Controllers\SdmController;
+use App\Http\Controllers\RekapController;
+use App\Http\Controllers\ProfileController;
 
 // Redirect root to dashboard or login
 Route::get('/', function () {
@@ -19,5 +26,17 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->midd
 
 // Protected Routes
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard',           [DashboardController::class,       'index'])->name('dashboard');
+    Route::get('/sekolah',             [SekolahController::class,         'index'])->name('sekolah.index');
+    Route::get('/program-pendidikan',  [ProgramPendidikanController::class, 'index'])->name('program.index');
+    Route::get('/teknologi',           [TeknologiController::class,        'index'])->name('teknologi.index');
+    Route::get('/sarana-prasarana',    [SarprasController::class,          'index'])->name('sarpras.index');
+    Route::get('/sdm',                 [SdmController::class,              'index'])->name('sdm.index');
+    Route::get('/rekap-analisis',      [RekapController::class,            'index'])->name('rekap.index');
+
+    // Profile
+    Route::get('/profile',             [ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profile',             [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/avatar',     [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
+    Route::delete('/profile/avatar',   [ProfileController::class, 'removeAvatar'])->name('profile.avatar.remove');
 });
