@@ -22,3 +22,40 @@
     --color-yht-amber: #f59e0b;
     --color-yht-amber-light: #fef3c7;
 }
+
+/* ── Form utilities (sekolah form, etc.) ── */
+@layer components {
+    .form-label {
+        @apply block text-xs font-medium text-gray-500 mb-1.5;
+    }
+    .form-input {
+        @apply w-full px-3.5 py-2.5 rounded-lg border border-gray-200 bg-white text-sm text-gray-800
+               placeholder:text-gray-300
+               focus:outline-none focus:border-[#162040] focus:ring-2 focus:ring-[#162040]/10
+               transition-colors;
+    }
+    .form-select {
+        @apply w-full px-3.5 py-2.5 pr-9 rounded-lg border border-gray-200 bg-white text-sm text-gray-800
+               appearance-none
+               focus:outline-none focus:border-[#162040] focus:ring-2 focus:ring-[#162040]/10
+               transition-colors cursor-pointer;
+    }
+    .form-error {
+        @apply text-xs text-red-500 mt-1;
+    }
+    .form-section {
+        @apply pb-6 mb-6 border-b border-gray-100;
+    }
+    .form-section:last-of-type {
+        @apply border-0 pb-0 mb-0;
+    }
+    .form-section-title {
+        @apply flex items-center gap-2.5 mb-4;
+    }
+    .form-section-bar {
+        @apply w-[3px] h-5 bg-amber-400 rounded-sm flex-shrink-0;
+    }
+    .form-section-label {
+        @apply text-xs font-bold uppercase tracking-wider text-[#162040];
+    }
+}

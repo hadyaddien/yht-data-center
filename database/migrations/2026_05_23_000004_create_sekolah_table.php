@@ -11,10 +11,8 @@ return new class extends Migration
         Schema::create('sekolah', function (Blueprint $table) {
             $table->id();
             $table->string('npsn', 20)->unique();
-            $table->string('nss', 20)->nullable();
             $table->string('nama');
             $table->enum('jenjang', ['KB', 'TK', 'SD', 'SMP', 'SMA', 'SMK']);
-            $table->enum('status', ['negeri', 'swasta'])->default('swasta');
             $table->text('alamat')->nullable();
             $table->foreignId('kota_id')->nullable()->constrained('kota_kabupaten')->nullOnDelete();
             $table->foreignId('provinsi_id')->constrained('provinsi')->cascadeOnDelete();

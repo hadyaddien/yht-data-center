@@ -12,6 +12,19 @@ class TeknologiPembelajaran extends Model
     protected $fillable = [
         'sekolah_id',
         'tahun_ajaran',
+        'software_aplikasi_pembelajaran_status',
+        'lms_kemendikdasmen_status',
+        'aplikasi_smart_classroom_status',
+        'koleksi_ebook_status',
+        'website_sekolah_status',
+        'server_pembelajaran_status',
+        'tenaga_khusus_it_status',
+        'media_sosial',
+        'platform_lms',
+        'platform_pendidikan',
+        'alat_interaktif',
+        'platform_komunikasi',
+        'aplikasi_manajemen',
         'memiliki_lab_komputer',
         'jumlah_komputer_lab',
         'jumlah_komputer_admin',
@@ -39,6 +52,12 @@ class TeknologiPembelajaran extends Model
         'memiliki_e_perpustakaan'  => 'boolean',
         'memiliki_smart_classroom' => 'boolean',
         'memiliki_tenaga_it'       => 'boolean',
+        'media_sosial'             => 'array',
+        'platform_lms'             => 'array',
+        'platform_pendidikan'      => 'array',
+        'alat_interaktif'          => 'array',
+        'platform_komunikasi'      => 'array',
+        'aplikasi_manajemen'       => 'array',
     ];
 
     public function sekolah(): BelongsTo

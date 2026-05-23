@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SekolahController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProgramPendidikanController;
 use App\Http\Controllers\TeknologiController;
 use App\Http\Controllers\SarprasController;
@@ -27,7 +28,11 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->midd
 // Protected Routes
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard',           [DashboardController::class,       'index'])->name('dashboard');
-    Route::get('/sekolah',             [SekolahController::class,         'index'])->name('sekolah.index');
+    Route::resource('sekolah',         SekolahController::class);
+    Route::resource('users',           UserController::class);
+    Route::get('/api/kota-kabupaten',  [SekolahController::class, 'kotaByProvinsi'])->name('api.kota');
+    Route::get('/api/kecamatan',       [SekolahController::class, 'kecamatanByKota'])->name('api.kecamatan');
+    Route::get('/api/kelurahan',       [SekolahController::class, 'kelurahanByKecamatan'])->name('api.kelurahan');
     Route::get('/program-pendidikan',  [ProgramPendidikanController::class, 'index'])->name('program.index');
     Route::get('/teknologi',           [TeknologiController::class,        'index'])->name('teknologi.index');
     Route::get('/sarana-prasarana',    [SarprasController::class,          'index'])->name('sarpras.index');

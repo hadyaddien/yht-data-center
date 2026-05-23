@@ -5,12 +5,15 @@ namespace Database\Seeders;
 use App\Models\KotaKabupaten;
 use App\Models\Provinsi;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class KotaKabupatenSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
         KotaKabupaten::truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
         $jakartaId       = Provinsi::where('kode', '31')->value('id');
         $jawatimurId     = Provinsi::where('kode', '35')->value('id');
@@ -46,3 +49,4 @@ class KotaKabupatenSeeder extends Seeder
         }
     }
 }
+

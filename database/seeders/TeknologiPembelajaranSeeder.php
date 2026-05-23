@@ -5,12 +5,15 @@ namespace Database\Seeders;
 use App\Models\Sekolah;
 use App\Models\TeknologiPembelajaran;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class TeknologiPembelajaranSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
         TeknologiPembelajaran::truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
         $tahun = '2024/2025';
 
@@ -115,3 +118,4 @@ class TeknologiPembelajaranSeeder extends Seeder
         }
     }
 }
+

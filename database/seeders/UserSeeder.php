@@ -6,13 +6,16 @@ use App\Models\Provinsi;
 use App\Models\Sekolah;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
         User::truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
         $jakartaId  = Provinsi::where('kode', '31')->value('id');
         $sulselId   = Provinsi::where('kode', '73')->value('id');
@@ -96,3 +99,4 @@ class UserSeeder extends Seeder
         ]);
     }
 }
+

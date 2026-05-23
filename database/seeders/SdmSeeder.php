@@ -5,12 +5,15 @@ namespace Database\Seeders;
 use App\Models\Sdm;
 use App\Models\Sekolah;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class SdmSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
         Sdm::truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
         $tahun = '2024/2025';
 
@@ -85,3 +88,4 @@ class SdmSeeder extends Seeder
         }
     }
 }
+

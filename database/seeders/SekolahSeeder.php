@@ -6,12 +6,15 @@ use App\Models\KotaKabupaten;
 use App\Models\Provinsi;
 use App\Models\Sekolah;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class SekolahSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
         Sekolah::truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
         $jakarta  = Provinsi::where('kode', '31')->value('id');
         $jawatim  = Provinsi::where('kode', '35')->value('id');
@@ -27,10 +30,8 @@ class SekolahSeeder extends Seeder
         $sekolahData = [
             [
                 'npsn'                 => '40312156',
-                'nss'                  => '102196001009',
                 'nama'                 => 'SD Hang Tuah 6 Makassar',
                 'jenjang'              => 'SD',
-                'status'               => 'swasta',
                 'alamat'               => 'Jl. Tentara Pelajar No. 6, Makassar',
                 'kota_id'              => $makassar,
                 'provinsi_id'          => $sulsel,
@@ -49,10 +50,8 @@ class SekolahSeeder extends Seeder
             ],
             [
                 'npsn'                 => '20106955',
-                'nss'                  => '204016402048',
                 'nama'                 => 'SMP Hang Tuah 2 Jakarta',
                 'jenjang'              => 'SMP',
-                'status'               => 'swasta',
                 'alamat'               => 'Jl. Ampera Raya No. 5, Jakarta Selatan',
                 'kota_id'              => $jktSel,
                 'provinsi_id'          => $jakarta,
@@ -71,10 +70,8 @@ class SekolahSeeder extends Seeder
             ],
             [
                 'npsn'                 => '20532142',
-                'nss'                  => '302056006030',
                 'nama'                 => 'SMA Hang Tuah 1 Surabaya',
                 'jenjang'              => 'SMA',
-                'status'               => 'swasta',
                 'alamat'               => 'Jl. Biliton No. 25, Surabaya',
                 'kota_id'              => $surabaya,
                 'provinsi_id'          => $jawatim,
@@ -93,10 +90,8 @@ class SekolahSeeder extends Seeder
             ],
             [
                 'npsn'                 => '60214578',
-                'nss'                  => null,
                 'nama'                 => 'TK Hang Tuah 3 Manado',
                 'jenjang'              => 'TK',
-                'status'               => 'swasta',
                 'alamat'               => 'Jl. Diponegoro No. 3, Manado',
                 'kota_id'              => $manado,
                 'provinsi_id'          => $sulut,
@@ -115,10 +110,8 @@ class SekolahSeeder extends Seeder
             ],
             [
                 'npsn'                 => '20106890',
-                'nss'                  => '404016408001',
                 'nama'                 => 'SMK Hang Tuah 1 Jakarta',
                 'jenjang'              => 'SMK',
-                'status'               => 'swasta',
                 'alamat'               => 'Jl. Enggano No. 10, Jakarta Utara',
                 'kota_id'              => $jktUt,
                 'provinsi_id'          => $jakarta,
