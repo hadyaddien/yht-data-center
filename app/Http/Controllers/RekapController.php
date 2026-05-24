@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ProgramPendidikan;
 use App\Models\Sdm;
 use App\Models\Sekolah;
 use App\Models\TeknologiPembelajaran;
@@ -77,27 +78,43 @@ class RekapController extends Controller
         $sdmMap = Sdm::where('tahun_ajaran', $tahun)
             ->get()->keyBy('sekolah_id');
 
-        $ringkasanSekolah = $sekolahList->map(function ($s) use ($sdmMap) {
-            $sdm = $sdmMap->get($s->id);
+        $progMap = ProgramPendidikan::where('tahun_ajaran', $tahun)
+            ->get()->keyBy('sekolah_id');
+
+        $ringkasanSekolah = $sekolahList->map(function ($s) use ($sdmMap, $progMap) {
+            $sdm  = $sdmMap->get($s->id);
+            $prog = $progMap->get($s->id);
             return [
                 'id'         => $s->id,
                 'jenjang'    => $s->jenjang,
                 'akreditasi' => $s->akreditasi_label,
                 'name'       => $s->nama,
-                'lokasi'     => ($s->kota?->nama ?? '') . ', ' . $s->provinsi->nama,
+                'lokasi'     => ($s->kota?->nama ?? '') . ', ' . ($s->provinsi?->nama ?? ''),
+                'provinsi'   => $s->provinsi?->nama ?? '',
                 'kepsek'     => $s->kepala_sekolah_nama,
                 'npsn'       => $s->npsn,
                 'guru'       => $sdm ? ($sdm->guru_pns + $sdm->guru_honorer + $sdm->guru_p3k) : 0,
                 'karyawan'   => $sdm ? ($sdm->karyawan_pns + $sdm->karyawan_honorer + $sdm->karyawan_p3k) : 0,
                 'rombel'     => $sdm?->jumlah_rombel ?? 0,
                 'rapor'      => [
-                    'literasi'  => $s->rapor_literasi,
-                    'numerasi'  => $s->rapor_numerasi,
-                    'karakter'  => $s->rapor_karakter,
+                    'literasi'            => $s->rapor_literasi ? (float) $s->rapor_literasi : null,
+                    'numerasi'            => $s->rapor_numerasi ? (float) $s->rapor_numerasi : null,
+                    'karakter'            => $s->rapor_karakter ? (float) $s->rapor_karakter : null,
+                    'kualitas_pbm'        => $prog?->pbd_kualitas_pembelajaran ? (float) $prog->pbd_kualitas_pembelajaran : null,
+                    'iklim_keamanan'      => $prog?->pbd_iklim_keamanan        ? (float) $prog->pbd_iklim_keamanan        : null,
+                    'iklim_kebhinekaan'   => $prog?->pbd_iklim_kebhinekaan     ? (float) $prog->pbd_iklim_kebhinekaan     : null,
                 ],
             ];
         })->toArray();
 
-        return view('rekap-analisis', compact('stats', 'jenjangChartData', 'teknologiAdopsi', 'ringkasanSekolah'));
+        // Compute average rapor scores for radar chart (6 axes)
+        $radarKeys = ['literasi', 'numerasi', 'karakter', 'kualitas_pbm', 'iklim_keamanan', 'iklim_kebhinekaan'];
+        $raporAvg  = [];
+        foreach ($radarKeys as $key) {
+            $vals = array_filter(array_column(array_column($ringkasanSekolah, 'rapor'), $key), fn($v) => $v !== null);
+            $raporAvg[$key] = count($vals) ? round(array_sum($vals) / count($vals), 1) : 0;
+        }
+
+        return view('rekap-analisis', compact('stats', 'jenjangChartData', 'teknologiAdopsi', 'ringkasanSekolah', 'raporAvg'));
     }
 }

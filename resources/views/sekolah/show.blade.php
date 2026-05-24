@@ -132,15 +132,12 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 md:min-w-[240px]">
-                    <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-                        <p class="text-[11px] text-gray-400 font-medium">Jenjang</p>
-                        <p class="text-sm font-bold text-[#162040] mt-0.5">{{ $display($sekolah->jenjang) }}</p>
-                    </div>
-
-                    <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+                <div class="flex justify-end md:min-w-[150px]">
+                    <div class="rounded-xl border border-gray-100 bg-gray-50 px-5 py-3 min-w-[140px]">
                         <p class="text-[11px] text-gray-400 font-medium">Tahun Berdiri</p>
-                        <p class="text-sm font-bold text-[#162040] mt-0.5">{{ $display($sekolah->tahun_berdiri) }}</p>
+                        <p class="text-sm font-bold text-[#162040] mt-0.5">
+                            {{ $display($sekolah->tahun_berdiri) }}
+                        </p>
                     </div>
                 </div>
             </div>

@@ -101,7 +101,7 @@
                 <span class="sidebar-text">Data Sekolah</span>
             </a>
 
-            <a href="#"
+            <a href="{{ route('program.index') }}"
                 class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-[#c5d5e8] text-sm font-medium transition-all mx-2 rounded-lg mb-0.5 {{ $currentRoute === 'program' ? 'active' : '' }}">
                 <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -110,7 +110,7 @@
                 <span class="sidebar-text">Program Pendidikan</span>
             </a>
 
-            <a href="#"
+            <a href="{{ route('teknologi.index') }}"
                 class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-[#c5d5e8] text-sm font-medium transition-all mx-2 rounded-lg mb-0.5 {{ $currentRoute === 'teknologi' ? 'active' : '' }}">
                 <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -119,7 +119,7 @@
                 <span class="sidebar-text">Teknologi</span>
             </a>
 
-            <a href="#"
+            <a href="{{ route('sarpras.index') }}"
                 class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-[#c5d5e8] text-sm font-medium transition-all mx-2 rounded-lg mb-0.5 {{ $currentRoute === 'sarpras' ? 'active' : '' }}">
                 <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -128,7 +128,7 @@
                 <span class="sidebar-text">Sarana Prasarana</span>
             </a>
 
-            <a href="#"
+            <a href="{{ route('sdm.index') }}"
                 class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-[#c5d5e8] text-sm font-medium transition-all mx-2 rounded-lg mb-0.5 {{ $currentRoute === 'sdm' ? 'active' : '' }}">
                 <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -137,7 +137,7 @@
                 <span class="sidebar-text">SDM</span>
             </a>
 
-            <a href="#"
+            <a href="{{ route('rekap.index') }}"
                 class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-[#c5d5e8] text-sm font-medium transition-all mx-2 rounded-lg mb-0.5 {{ $currentRoute === 'rekap' ? 'active' : '' }}">
                 <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
