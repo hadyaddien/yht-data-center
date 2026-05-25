@@ -9,7 +9,11 @@ class ProgramPendidikanController extends Controller
 {
     public function index(Request $request)
     {
-        $sekolahList = Sekolah::with(['kota', 'provinsi', 'programPendidikan'])
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        $sekolahList = $user
+            ->applySekolahScope(Sekolah::with(['kota', 'provinsi', 'programPendidikan']))
             ->where('status_operasional', 'aktif')
             ->orderBy('jenjang')
             ->orderBy('nama')

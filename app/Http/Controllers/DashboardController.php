@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Provinsi;
 use App\Models\Sdm;
 use App\Models\Sekolah;
 use App\Models\SaranaPrasarana;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -15,12 +13,23 @@ class DashboardController extends Controller
     {
         $tahun = '2024/2025';
 
-        $totalSekolah  = Sekolah::where('status_operasional', 'aktif')->count();
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        $baseSekolahQuery = $user->applySekolahScope(Sekolah::query())
+            ->where('status_operasional', 'aktif');
+
+        $schoolIds = (clone $baseSekolahQuery)->pluck('id');
+
+        $totalSekolah  = (clone $baseSekolahQuery)->count();
         $totalGuru     = Sdm::where('tahun_ajaran', $tahun)
+            ->whereIn('sekolah_id', $schoolIds)
             ->selectRaw('SUM(guru_pns + guru_honorer + guru_p3k) as total')
             ->value('total') ?? 0;
-        $terakreditasi = Sekolah::whereNotNull('akreditasi_nilai')->count();
-        $rataSarpras   = SaranaPrasarana::where('tahun_ajaran', $tahun)->avg('skor_rata_rata') ?? 0;
+        $terakreditasi = (clone $baseSekolahQuery)->whereNotNull('akreditasi_nilai')->count();
+        $rataSarpras   = SaranaPrasarana::where('tahun_ajaran', $tahun)
+            ->whereIn('sekolah_id', $schoolIds)
+            ->avg('skor_rata_rata') ?? 0;
 
         $stats = [
             'total_sekolah' => $totalSekolah,
@@ -29,7 +38,7 @@ class DashboardController extends Controller
             'rata_sarpras'  => round($rataSarpras, 1),
         ];
 
-        $jenjangCounts = Sekolah::where('status_operasional', 'aktif')
+        $jenjangCounts = (clone $baseSekolahQuery)
             ->select('jenjang', DB::raw('COUNT(*) as total'))
             ->groupBy('jenjang')
             ->pluck('total', 'jenjang');
@@ -40,7 +49,7 @@ class DashboardController extends Controller
             'values' => array_map(fn($j) => (int) ($jenjangCounts[$j] ?? 0), $jenjangLabels),
         ];
 
-        $provinsiCounts = Sekolah::where('status_operasional', 'aktif')
+        $provinsiCounts = (clone $baseSekolahQuery)
             ->join('provinsi', 'sekolah.provinsi_id', '=', 'provinsi.id')
             ->select('provinsi.nama', DB::raw('COUNT(*) as total'))
             ->groupBy('provinsi.nama')
@@ -63,7 +72,7 @@ class DashboardController extends Controller
             'SMK' => 'bg-orange-100 text-orange-700',
         ];
 
-        $recentSchools = Sekolah::with(['kota', 'provinsi'])
+        $recentSchools = $user->applySekolahScope(Sekolah::with(['kota', 'provinsi']))
             ->where('status_operasional', 'aktif')
             ->latest()
             ->take(5)

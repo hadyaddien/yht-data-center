@@ -9,7 +9,11 @@ class TeknologiController extends Controller
 {
     public function index(Request $request)
     {
-        $sekolahList = Sekolah::with(['kota', 'provinsi', 'teknologiPembelajaran'])
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        $sekolahList = $user
+            ->applySekolahScope(Sekolah::with(['kota', 'provinsi', 'teknologiPembelajaran']))
             ->where('status_operasional', 'aktif')
             ->orderBy('jenjang')
             ->orderBy('nama')

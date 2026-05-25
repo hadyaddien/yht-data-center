@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -65,6 +66,32 @@ class User extends Authenticatable
     public function isKepalaSekolah(): bool
     {
         return $this->role === 'kepala_sekolah';
+    }
+
+    public function canManageSekolahData(): bool
+    {
+        return $this->isSuperAdmin();
+    }
+
+    public function applySekolahScope(Builder $query): Builder
+    {
+        if ($this->isSuperAdmin()) {
+            return $query;
+        }
+
+        if ($this->isAdminWilayah()) {
+            return $this->provinsi_id
+                ? $query->where('provinsi_id', $this->provinsi_id)
+                : $query->whereRaw('1 = 0');
+        }
+
+        if ($this->isKepalaSekolah()) {
+            return $this->sekolah_id
+                ? $query->whereKey($this->sekolah_id)
+                : $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereRaw('1 = 0');
     }
 
     public function getRoleLabelAttribute(): string

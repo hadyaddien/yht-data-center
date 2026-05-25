@@ -4,6 +4,8 @@
 
 @section('content')
     @php
+        $canManageSekolah = auth()->user()->canManageSekolahData();
+
         $badgeConfig = [
             'KB' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600', 'ring' => 'ring-gray-200'],
             'TK' => ['bg' => 'bg-amber-100', 'text' => 'text-amber-700', 'ring' => 'ring-amber-200'],
@@ -73,18 +75,20 @@
                 </p>
             </div>
 
-            <div class="flex items-center gap-2 shrink-0">
-                <a href="{{ route('sekolah.edit', $sekolah) }}"
-                    class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#162040] hover:bg-[#1e2f5a] text-white text-xs font-semibold rounded-md transition-colors shadow-sm">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                    Edit Data
-                </a>
-            </div>
+            @if ($canManageSekolah)
+                <div class="flex items-center gap-2 shrink-0">
+                    <a href="{{ route('sekolah.edit', $sekolah) }}"
+                        class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#162040] hover:bg-[#1e2f5a] text-white text-xs font-semibold rounded-md transition-colors shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        Edit Data
+                    </a>
+                </div>
+            @endif
         </div>
 
 

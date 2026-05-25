@@ -6,7 +6,6 @@ use App\Models\ProgramPendidikan;
 use App\Models\Sdm;
 use App\Models\Sekolah;
 use App\Models\TeknologiPembelajaran;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class RekapController extends Controller
@@ -14,10 +13,21 @@ class RekapController extends Controller
     public function index()
     {
         $tahun        = '2024/2025';
-        $totalSekolah = Sekolah::where('status_operasional', 'aktif')->count();
-        $terakreditasi = Sekolah::whereNotNull('akreditasi_nilai')->count();
+
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        abort_if($user->isKepalaSekolah(), 403, 'Anda tidak memiliki akses ke halaman Rekap & Analisis.');
+
+        $baseSekolahQuery = $user->applySekolahScope(Sekolah::query())
+            ->where('status_operasional', 'aktif');
+
+        $schoolIds = (clone $baseSekolahQuery)->pluck('id');
+        $totalSekolah = (clone $baseSekolahQuery)->count();
+        $terakreditasi = (clone $baseSekolahQuery)->whereNotNull('akreditasi_nilai')->count();
 
         $sdmAgg = Sdm::where('tahun_ajaran', $tahun)
+            ->whereIn('sekolah_id', $schoolIds)
             ->selectRaw('
                 SUM(guru_pns + guru_honorer + guru_p3k) as total_guru,
                 SUM(karyawan_pns + karyawan_honorer + karyawan_p3k) as total_karyawan,
@@ -33,12 +43,13 @@ class RekapController extends Controller
         ];
 
         $jenjangLabels = ['TK', 'SD', 'SMP', 'SMA', 'SMK'];
-        $jenjangSekolah = Sekolah::where('status_operasional', 'aktif')
+        $jenjangSekolah = (clone $baseSekolahQuery)
             ->select('jenjang', DB::raw('COUNT(*) as total'))
             ->groupBy('jenjang')
             ->pluck('total', 'jenjang');
 
         $guruPerJenjang = Sdm::where('tahun_ajaran', $tahun)
+            ->whereIn('sdm.sekolah_id', $schoolIds)
             ->join('sekolah', 'sdm.sekolah_id', '=', 'sekolah.id')
             ->select('sekolah.jenjang', DB::raw('SUM(guru_pns + guru_honorer + guru_p3k) as total_guru'))
             ->groupBy('sekolah.jenjang')
@@ -50,15 +61,17 @@ class RekapController extends Controller
             'guru'    => array_map(fn($j) => (int) ($guruPerJenjang[$j] ?? 0), $jenjangLabels),
         ];
 
-        $totalTeknologi = TeknologiPembelajaran::where('tahun_ajaran', $tahun)->count();
+        $totalTeknologi = TeknologiPembelajaran::where('tahun_ajaran', $tahun)
+            ->whereIn('sekolah_id', $schoolIds)
+            ->count();
         $teknologiAdopsi = [];
         if ($totalTeknologi > 0) {
             $adopsiData = [
-                ['label' => 'Software Pembelajaran', 'count' => TeknologiPembelajaran::where('tahun_ajaran', $tahun)->whereNotNull('aplikasi_pembelajaran')->count()],
-                ['label' => 'LMS Kemendikdasmen',    'count' => TeknologiPembelajaran::where('tahun_ajaran', $tahun)->where('memiliki_lms', true)->count()],
-                ['label' => 'Smart Classroom',       'count' => TeknologiPembelajaran::where('tahun_ajaran', $tahun)->where('memiliki_smart_classroom', true)->count()],
-                ['label' => 'E-Book / E-Perpustakaan', 'count' => TeknologiPembelajaran::where('tahun_ajaran', $tahun)->where('memiliki_e_perpustakaan', true)->count()],
-                ['label' => 'Tenaga IT',             'count' => TeknologiPembelajaran::where('tahun_ajaran', $tahun)->where('memiliki_tenaga_it', true)->count()],
+                ['label' => 'Software Pembelajaran', 'count' => TeknologiPembelajaran::where('tahun_ajaran', $tahun)->whereIn('sekolah_id', $schoolIds)->whereNotNull('aplikasi_pembelajaran')->count()],
+                ['label' => 'LMS Kemendikdasmen',    'count' => TeknologiPembelajaran::where('tahun_ajaran', $tahun)->whereIn('sekolah_id', $schoolIds)->where('memiliki_lms', true)->count()],
+                ['label' => 'Smart Classroom',       'count' => TeknologiPembelajaran::where('tahun_ajaran', $tahun)->whereIn('sekolah_id', $schoolIds)->where('memiliki_smart_classroom', true)->count()],
+                ['label' => 'E-Book / E-Perpustakaan', 'count' => TeknologiPembelajaran::where('tahun_ajaran', $tahun)->whereIn('sekolah_id', $schoolIds)->where('memiliki_e_perpustakaan', true)->count()],
+                ['label' => 'Tenaga IT',             'count' => TeknologiPembelajaran::where('tahun_ajaran', $tahun)->whereIn('sekolah_id', $schoolIds)->where('memiliki_tenaga_it', true)->count()],
             ];
             foreach ($adopsiData as $item) {
                 $persen = round($item['count'] / $totalTeknologi * 100);
@@ -70,15 +83,17 @@ class RekapController extends Controller
             }
         }
 
-        $sekolahList = Sekolah::with(['kota', 'provinsi'])
+        $sekolahList = $user->applySekolahScope(Sekolah::with(['kota', 'provinsi']))
             ->where('status_operasional', 'aktif')
             ->orderBy('jenjang')->orderBy('nama')
             ->get();
 
         $sdmMap = Sdm::where('tahun_ajaran', $tahun)
+            ->whereIn('sekolah_id', $schoolIds)
             ->get()->keyBy('sekolah_id');
 
         $progMap = ProgramPendidikan::where('tahun_ajaran', $tahun)
+            ->whereIn('sekolah_id', $schoolIds)
             ->get()->keyBy('sekolah_id');
 
         $ringkasanSekolah = $sekolahList->map(function ($s) use ($sdmMap, $progMap) {

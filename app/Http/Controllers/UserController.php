@@ -13,7 +13,10 @@ class UserController extends Controller
 {
     private function checkSuperAdmin(): void
     {
-        abort_unless(auth()->user()->isSuperAdmin(), 403, 'Hanya Super Admin yang dapat mengakses halaman ini.');
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        abort_unless($user->isSuperAdmin(), 403, 'Hanya Super Admin yang dapat mengakses halaman ini.');
     }
 
     /* ─── INDEX ─────────────────────────────────────────── */
@@ -31,7 +34,7 @@ class UserController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -62,8 +65,8 @@ class UserController extends Controller
             'email'                 => ['required', 'email', 'unique:users,email'],
             'password'              => ['required', 'string', 'min:8', 'confirmed'],
             'role'                  => ['required', 'in:superadmin,admin_wilayah,kepala_sekolah'],
-            'provinsi_id'           => ['nullable', 'exists:provinsi,id'],
-            'sekolah_id'            => ['nullable', 'exists:sekolah,id'],
+            'provinsi_id'           => ['nullable', 'exists:provinsi,id', 'required_if:role,admin_wilayah'],
+            'sekolah_id'            => ['nullable', 'exists:sekolah,id', 'required_if:role,kepala_sekolah'],
         ], [
             'name.required'         => 'Nama wajib diisi.',
             'email.required'        => 'Email wajib diisi.',
@@ -73,7 +76,22 @@ class UserController extends Controller
             'password.min'          => 'Password minimal 8 karakter.',
             'password.confirmed'    => 'Konfirmasi password tidak cocok.',
             'role.required'         => 'Role wajib dipilih.',
+            'provinsi_id.required_if' => 'Provinsi wajib dipilih untuk Admin Wilayah.',
+            'sekolah_id.required_if'  => 'Sekolah wajib dipilih untuk Kepala Sekolah.',
         ]);
+
+        if ($validated['role'] === 'superadmin') {
+            $validated['provinsi_id'] = null;
+            $validated['sekolah_id'] = null;
+        }
+
+        if ($validated['role'] === 'admin_wilayah') {
+            $validated['sekolah_id'] = null;
+        }
+
+        if ($validated['role'] === 'kepala_sekolah') {
+            $validated['provinsi_id'] = null;
+        }
 
         $validated['password'] = Hash::make($validated['password']);
 
@@ -104,8 +122,8 @@ class UserController extends Controller
             'email'                 => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'password'              => ['nullable', 'string', 'min:8', 'confirmed'],
             'role'                  => ['required', 'in:superadmin,admin_wilayah,kepala_sekolah'],
-            'provinsi_id'           => ['nullable', 'exists:provinsi,id'],
-            'sekolah_id'            => ['nullable', 'exists:sekolah,id'],
+            'provinsi_id'           => ['nullable', 'exists:provinsi,id', 'required_if:role,admin_wilayah'],
+            'sekolah_id'            => ['nullable', 'exists:sekolah,id', 'required_if:role,kepala_sekolah'],
         ], [
             'name.required'         => 'Nama wajib diisi.',
             'email.required'        => 'Email wajib diisi.',
@@ -114,7 +132,22 @@ class UserController extends Controller
             'password.min'          => 'Password minimal 8 karakter.',
             'password.confirmed'    => 'Konfirmasi password tidak cocok.',
             'role.required'         => 'Role wajib dipilih.',
+            'provinsi_id.required_if' => 'Provinsi wajib dipilih untuk Admin Wilayah.',
+            'sekolah_id.required_if'  => 'Sekolah wajib dipilih untuk Kepala Sekolah.',
         ]);
+
+        if ($validated['role'] === 'superadmin') {
+            $validated['provinsi_id'] = null;
+            $validated['sekolah_id'] = null;
+        }
+
+        if ($validated['role'] === 'admin_wilayah') {
+            $validated['sekolah_id'] = null;
+        }
+
+        if ($validated['role'] === 'kepala_sekolah') {
+            $validated['provinsi_id'] = null;
+        }
 
         if (empty($validated['password'])) {
             unset($validated['password']);

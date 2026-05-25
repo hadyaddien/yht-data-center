@@ -11,6 +11,7 @@ use App\Http\Controllers\SarprasController;
 use App\Http\Controllers\SdmController;
 use App\Http\Controllers\RekapController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CetakLaporanController;
 
 // Redirect root to dashboard or login
 Route::get('/', function () {
@@ -38,6 +39,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/sarana-prasarana',    [SarprasController::class,          'index'])->name('sarpras.index');
     Route::get('/sdm',                 [SdmController::class,              'index'])->name('sdm.index');
     Route::get('/rekap-analisis',      [RekapController::class,            'index'])->name('rekap.index');
+    Route::get('/cetak-laporan',        [CetakLaporanController::class,     'index'])->name('cetak-laporan.index');
 
     // Profile
     Route::get('/profile',             [ProfileController::class, 'show'])->name('profile.show');

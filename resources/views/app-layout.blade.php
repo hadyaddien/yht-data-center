@@ -78,6 +78,7 @@
                     request()->routeIs('sarpras*') => 'sarpras',
                     request()->routeIs('sdm*') => 'sdm',
                     request()->routeIs('rekap*') => 'rekap',
+                    request()->routeIs('cetak-laporan*') => 'cetak-laporan',
                     request()->routeIs('users*') => 'users',
                     default => '',
                 };
@@ -137,13 +138,24 @@
                 <span class="sidebar-text">SDM</span>
             </a>
 
-            <a href="{{ route('rekap.index') }}"
-                class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-[#c5d5e8] text-sm font-medium transition-all mx-2 rounded-lg mb-0.5 {{ $currentRoute === 'rekap' ? 'active' : '' }}">
+            @if (!auth()->user()->isKepalaSekolah())
+                <a href="{{ route('rekap.index') }}"
+                    class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-[#c5d5e8] text-sm font-medium transition-all mx-2 rounded-lg mb-0.5 {{ $currentRoute === 'rekap' ? 'active' : '' }}">
+                    <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span class="sidebar-text">Rekap &amp; Analisis</span>
+                </a>
+            @endif
+
+            <a href="{{ route('cetak-laporan.index') }}"
+                class="sidebar-item flex items-center gap-3 px-4 py-2.5 text-[#c5d5e8] text-sm font-medium transition-all mx-2 rounded-lg mb-0.5 {{ $currentRoute === 'cetak-laporan' ? 'active' : '' }}">
                 <svg class="w-4.5 h-4.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                 </svg>
-                <span class="sidebar-text">Rekap &amp; Analisis</span>
+                <span class="sidebar-text">Cetak Laporan</span>
             </a>
 
             @if (auth()->user()->isSuperAdmin())

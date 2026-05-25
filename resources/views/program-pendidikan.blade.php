@@ -96,13 +96,15 @@
                         </div>
                     </div>
                     <svg class="pp-chevron w-4 h-4 text-gray-400 transition-transform duration-200 flex-shrink-0"
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        @if (auth()->user()->isKepalaSekolah()) style="transform: rotate(90deg)" @endif fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
 
                 {{-- Expanded Content --}}
-                <div class="pp-detail hidden border-t border-gray-100 px-5 py-5">
+                <div
+                    class="pp-detail {{ auth()->user()->isKepalaSekolah() ? '' : 'hidden' }} border-t border-gray-100 px-5 py-5">
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 

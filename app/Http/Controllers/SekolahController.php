@@ -12,10 +12,38 @@ use Illuminate\Http\Request;
 
 class SekolahController extends Controller
 {
+    private function authorizeManageSekolah(): void
+    {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        abort_unless(
+            $user->canManageSekolahData(),
+            403,
+            'Hanya Super Admin yang dapat mengubah data sekolah.'
+        );
+    }
+
+    private function authorizeViewSekolah(Sekolah $sekolah): void
+    {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        $canView = $user
+            ->applySekolahScope(Sekolah::query()->whereKey($sekolah->id))
+            ->exists();
+
+        abort_unless($canView, 403, 'Anda tidak memiliki akses ke data sekolah ini.');
+    }
+
     /* ─── LIST ─────────────────────────────────────────── */
     public function index(Request $request)
     {
-        $query = Sekolah::with(['kota', 'provinsi'])
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        $query = $user
+            ->applySekolahScope(Sekolah::with(['kota', 'provinsi']))
             ->where('status_operasional', 'aktif');
 
         if ($request->filled('jenjang') && $request->jenjang !== 'Semua Jenjang') {
@@ -40,6 +68,8 @@ class SekolahController extends Controller
     /* ─── CREATE FORM ──────────────────────────────────── */
     public function create()
     {
+        $this->authorizeManageSekolah();
+
         $provinsiList = Provinsi::orderBy('nama')->get();
         $kotaList     = collect();
         $tahunList    = range(date('Y'), 1900);
@@ -50,6 +80,8 @@ class SekolahController extends Controller
     /* ─── STORE ─────────────────────────────────────────── */
     public function store(Request $request)
     {
+        $this->authorizeManageSekolah();
+
         $validated = $request->validate(
             array_merge($this->rules(), $this->programPendidikanRules(), $this->teknologiRules()),
             $this->messages()
@@ -77,6 +109,8 @@ class SekolahController extends Controller
     /* ─── SHOW ──────────────────────────────────────────── */
     public function show(Sekolah $sekolah)
     {
+        $this->authorizeViewSekolah($sekolah);
+
         $sekolah->load(['kota', 'provinsi']);
         return view('sekolah.show', compact('sekolah'));
     }
@@ -84,6 +118,8 @@ class SekolahController extends Controller
     /* ─── EDIT FORM ─────────────────────────────────────── */
     public function edit(Sekolah $sekolah)
     {
+        $this->authorizeManageSekolah();
+
         $sekolah->load(['kota', 'provinsi']);
         $provinsiList   = Provinsi::orderBy('nama')->get();
         $kotaList       = $sekolah->provinsi_id
@@ -108,6 +144,8 @@ class SekolahController extends Controller
     /* ─── UPDATE ────────────────────────────────────────── */
     public function update(Request $request, Sekolah $sekolah)
     {
+        $this->authorizeManageSekolah();
+
         $validated = $request->validate(
             array_merge($this->rules($sekolah->id), $this->programPendidikanRules(), $this->teknologiRules()),
             $this->messages()
@@ -135,6 +173,8 @@ class SekolahController extends Controller
     /* ─── DESTROY ───────────────────────────────────────── */
     public function destroy(Sekolah $sekolah)
     {
+        $this->authorizeManageSekolah();
+
         $nama = $sekolah->nama;
         $sekolah->delete();
 
@@ -145,6 +185,8 @@ class SekolahController extends Controller
     /* ─── AJAX: kota by provinsi ─────────────────────────── */
     public function kotaByProvinsi(Request $request)
     {
+        $this->authorizeManageSekolah();
+
         $kota = KotaKabupaten::where('provinsi_id', $request->provinsi_id)
             ->orderBy('nama')
             ->get(['id', 'nama', 'jenis']);
@@ -155,6 +197,8 @@ class SekolahController extends Controller
     /* ─── AJAX: kecamatan by kota ────────────────────────── */
     public function kecamatanByKota(Request $request)
     {
+        $this->authorizeManageSekolah();
+
         $kecamatan = Kecamatan::where('kota_kabupaten_id', $request->kota_id)
             ->orderBy('nama')
             ->get(['id', 'nama']);
@@ -165,6 +209,8 @@ class SekolahController extends Controller
     /* ─── AJAX: kelurahan by kecamatan ───────────────────── */
     public function kelurahanByKecamatan(Request $request)
     {
+        $this->authorizeManageSekolah();
+
         $kec = Kecamatan::where('nama', $request->kecamatan_nama)
             ->where('kota_kabupaten_id', $request->kota_id)
             ->first();

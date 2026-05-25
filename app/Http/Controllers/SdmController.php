@@ -9,7 +9,11 @@ class SdmController extends Controller
 {
     public function index(Request $request)
     {
-        $sekolahList = Sekolah::with(['kota', 'provinsi', 'sdm', 'sdmGuru'])
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        $sekolahList = $user
+            ->applySekolahScope(Sekolah::with(['kota', 'provinsi', 'sdm', 'sdmGuru']))
             ->where('status_operasional', 'aktif')
             ->orderBy('jenjang')
             ->orderBy('nama')
