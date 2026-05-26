@@ -513,11 +513,11 @@
                 datasets: [{
                     label: 'Rata-rata',
                     data: [
-                        raporAvg.literasi          || 0,
-                        raporAvg.numerasi          || 0,
-                        raporAvg.karakter          || 0,
-                        raporAvg.kualitas_pbm      || 0,
-                        raporAvg.iklim_keamanan    || 0,
+                        raporAvg.literasi || 0,
+                        raporAvg.numerasi || 0,
+                        raporAvg.karakter || 0,
+                        raporAvg.kualitas_pbm || 0,
+                        raporAvg.iklim_keamanan || 0,
                         raporAvg.iklim_kebhinekaan || 0,
                     ],
                     backgroundColor: 'rgba(22,32,64,0.1)',
@@ -531,21 +531,34 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false },
+                    legend: {
+                        display: false
+                    },
                     tooltip: {
                         backgroundColor: '#162040',
                         titleColor: '#fff',
                         bodyColor: '#c5d5e8',
-                        callbacks: { label: ctx => 'Rata-rata : ' + ctx.raw }
+                        callbacks: {
+                            label: ctx => 'Rata-rata : ' + ctx.raw
+                        }
                     }
                 },
                 scales: {
                     r: {
                         beginAtZero: true,
                         max: 100,
-                        ticks: { display: false },
-                        grid: { color: '#e5e7eb' },
-                        pointLabels: { font: { size: 11 }, color: '#6b7280' }
+                        ticks: {
+                            display: false
+                        },
+                        grid: {
+                            color: '#e5e7eb'
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 11
+                            },
+                            color: '#6b7280'
+                        }
                     }
                 }
             }
@@ -806,5 +819,3 @@
         }
     </script>
 @endpush
-
-

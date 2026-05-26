@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'YHT Data Center') }} – @yield('title', 'Dashboard')</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/logo-yht-tab.png') }}?v=20260526b">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/logo-yht-tab.png') }}?v=20260526b">
+    <link rel="shortcut icon" href="{{ asset('images/logo-yht-tab.png') }}?v=20260526b">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo-yht-tab.png') }}?v=20260526b">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,6 +39,20 @@
         #user-dropdown.open {
             display: block;
         }
+
+        #sidebar.sidebar-collapsed .sidebar-brand-expanded {
+            display: none;
+        }
+
+        #sidebar.sidebar-collapsed .sidebar-brand-collapsed {
+            display: flex;
+        }
+
+        #sidebar.sidebar-collapsed .sidebar-header {
+            justify-content: center;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
     </style>
 </head>
 
@@ -45,10 +63,12 @@
         class="fixed left-0 top-0 h-full w-[240px] bg-[#162040] flex flex-col z-30 transition-all duration-300">
 
         {{-- Logo Area --}}
-        <div class="flex items-center justify-between px-4 py-4 border-b border-[#1e3558]">
-            <div class="flex items-center gap-3 min-w-0">
-                <div class="w-9 h-9 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    {{-- Anchor Icon --}}
+        <div class="sidebar-header relative flex items-center justify-between px-4 py-4 border-b border-[#1e3558]">
+            <div class="sidebar-brand-expanded flex items-center gap-3 min-w-0">
+                <img src="{{ asset('images/logo-yht.png') }}" alt="Logo Yayasan Hang Tuah"
+                    class="w-9 h-9 rounded-full object-cover flex-shrink-0 bg-white"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                <div class="w-9 h-9 bg-amber-500 rounded-full items-center justify-center flex-shrink-0 hidden">
                     <svg class="w-5 h-5 text-[#162040]" fill="currentColor" viewBox="0 0 24 24">
                         <path
                             d="M12 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 4a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm7.93 5H13v-1a1 1 0 0 0-2 0v1H4.07A1 1 0 0 0 3 12a9 9 0 0 0 8 8.94V22a1 1 0 0 0 2 0v-1.06A9 9 0 0 0 21 12a1 1 0 0 0-1.07-1zM12 19a7 7 0 0 1-6.92-6h2.04a5 5 0 0 0 9.76 0h2.04A7 7 0 0 1 12 19z" />
@@ -59,12 +79,11 @@
                     <p class="text-[#7a9bbf] text-[10px] leading-tight">Pendataan Satdik 2026</p>
                 </div>
             </div>
-            <button onclick="toggleSidebar()"
-                class="text-[#7a9bbf] hover:text-white transition-colors ml-1 flex-shrink-0" title="Toggle Sidebar">
-                <svg id="sidebar-toggle-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-            </button>
+            <div
+                class="sidebar-brand-collapsed hidden items-center justify-center w-9 h-9 rounded-full overflow-hidden bg-white">
+                <img src="{{ asset('images/logo-yht.png') }}" alt="Logo Yayasan Hang Tuah"
+                    class="w-full h-full object-cover">
+            </div>
         </div>
 
         {{-- Navigation --}}
@@ -158,7 +177,7 @@
                 <span class="sidebar-text">Cetak Laporan</span>
             </a>
 
-            @if (auth()->user()->isSuperAdmin())
+            @if (auth()->user()->isSuperAdmin() || auth()->user()->isAdminWilayah())
                 {{-- Divider --}}
                 <div class="mx-4 my-2 border-t border-[#1e3558]"></div>
                 <p class="px-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-[#4a6a8a] sidebar-text">
@@ -187,10 +206,12 @@
         <header
             class="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-6 sticky top-0 z-20 shadow-sm">
             <div class="flex items-center gap-2">
-                {{-- Mobile sidebar toggle --}}
+                {{-- Sidebar toggle --}}
                 <button onclick="toggleSidebar()"
-                    class="text-gray-400 hover:text-gray-600 transition-colors lg:hidden">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors rounded-lg p-1.5"
+                    title="Toggle Sidebar">
+                    <svg id="sidebar-toggle-icon" class="w-5 h-5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
@@ -318,20 +339,18 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const main = document.getElementById('main-content');
-            const icon = document.getElementById('sidebar-toggle-icon');
             const texts = document.querySelectorAll('.sidebar-text');
 
             sidebarCollapsed = !sidebarCollapsed;
+            sidebar.classList.toggle('sidebar-collapsed', sidebarCollapsed);
+
             if (sidebarCollapsed) {
                 sidebar.style.width = '64px';
                 main.style.marginLeft = '64px';
-                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>';
                 texts.forEach(t => t.style.display = 'none');
             } else {
                 sidebar.style.width = '240px';
                 main.style.marginLeft = '240px';
-                icon.innerHTML =
-                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>';
                 texts.forEach(t => t.style.display = '');
             }
         }

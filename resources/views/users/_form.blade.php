@@ -6,6 +6,7 @@
 @php
     $isEdit = isset($user) && $user->exists;
     $v = fn($field, $default = '') => old($field, $isEdit ? $user->$field ?? $default : $default);
+    $forceRoleKepsek = $forceRoleKepsek ?? false;
 @endphp
 
 @if ($errors->any())
@@ -68,26 +69,37 @@
             </div>
             <div>
                 <label class="form-label">Role <span class="text-red-500">*</span></label>
-                <div class="relative">
-                    <select name="role" id="role-select" class="form-select @error('role') !border-red-400 @enderror"
-                        onchange="onRoleChange(this.value)">
-                        <option value="" disabled hidden>— Pilih Role —</option>
-                        <option value="superadmin" {{ $v('role') === 'superadmin' ? 'selected' : '' }}>Super Admin
-                        </option>
-                        <option value="admin_wilayah" {{ $v('role') === 'admin_wilayah' ? 'selected' : '' }}>Admin
-                            Wilayah</option>
-                        <option value="kepala_sekolah" {{ $v('role') === 'kepala_sekolah' ? 'selected' : '' }}>Kepala
-                            Sekolah</option>
-                    </select>
-                    <x-select-chevron />
-                </div>
+                @if ($forceRoleKepsek)
+                    <input type="hidden" name="role" value="kepala_sekolah">
+                    <div
+                        class="h-11 px-3.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-700 flex items-center">
+                        Kepala Sekolah
+                    </div>
+                @else
+                    <div class="relative">
+                        <select name="role" id="role-select"
+                            class="form-select @error('role') !border-red-400 @enderror"
+                            onchange="onRoleChange(this.value)">
+                            <option value="" disabled hidden>— Pilih Role —</option>
+                            <option value="superadmin" {{ $v('role') === 'superadmin' ? 'selected' : '' }}>Super Admin
+                            </option>
+                            <option value="admin_wilayah" {{ $v('role') === 'admin_wilayah' ? 'selected' : '' }}>Admin
+                                Wilayah</option>
+                            <option value="kepala_sekolah" {{ $v('role') === 'kepala_sekolah' ? 'selected' : '' }}>
+                                Kepala
+                                Sekolah</option>
+                        </select>
+                        <x-select-chevron />
+                    </div>
+                @endif
                 @error('role')
                     <p class="form-error">{{ $message }}</p>
                 @enderror
             </div>
 
             {{-- Provinsi (admin_wilayah) --}}
-            <div id="field-provinsi" class="{{ in_array($v('role'), ['admin_wilayah']) ? '' : 'hidden' }}">
+            <div id="field-provinsi"
+                class="{{ !$forceRoleKepsek && in_array($v('role'), ['admin_wilayah']) ? '' : 'hidden' }}">
                 <label class="form-label">Provinsi Wilayah</label>
                 <div class="relative">
                     <select name="provinsi_id" class="form-select">
@@ -107,7 +119,8 @@
             </div>
 
             {{-- Sekolah (kepala_sekolah) --}}
-            <div id="field-sekolah" class="{{ in_array($v('role'), ['kepala_sekolah']) ? '' : 'hidden' }}">
+            <div id="field-sekolah"
+                class="{{ $forceRoleKepsek || in_array($v('role'), ['kepala_sekolah']) ? '' : 'hidden' }}">
                 <label class="form-label">Sekolah</label>
                 <div class="relative">
                     <select name="sekolah_id" class="form-select">
@@ -192,8 +205,16 @@
 
 <script>
     function onRoleChange(role) {
-        document.getElementById('field-provinsi').classList.toggle('hidden', role !== 'admin_wilayah');
-        document.getElementById('field-sekolah').classList.toggle('hidden', role !== 'kepala_sekolah');
+        const provField = document.getElementById('field-provinsi');
+        const sekolahField = document.getElementById('field-sekolah');
+
+        if (provField) {
+            provField.classList.toggle('hidden', role !== 'admin_wilayah');
+        }
+
+        if (sekolahField) {
+            sekolahField.classList.toggle('hidden', role !== 'kepala_sekolah');
+        }
     }
 
     function togglePassword(fieldId, eyeId) {

@@ -171,6 +171,11 @@
 
     <div class="screen-content p-6 md:p-8 max-w-5xl mx-auto">
 
+        @php
+            $isKepalaSekolah = auth()->user()->isKepalaSekolah();
+            $lockedJenjang = $isKepalaSekolah ? $sekolahList->first()->jenjang ?? '' : '';
+        @endphp
+
         {{-- Page Header --}}
         <div class="mb-6">
             <h1 class="text-2xl font-bold text-[#162040]">Cetak Laporan</h1>
@@ -188,13 +193,19 @@
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Filter
                         Jenjang</label>
                     <div class="relative">
-                        <select id="filter-jenjang"
-                            class="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 pr-10 text-sm text-[#162040] font-medium focus:outline-none focus:ring-2 focus:ring-[#162040]/20 focus:border-[#162040] cursor-pointer transition">
-                            <option value="">Semua Jenjang ({{ $sekolahList->count() }} sekolah)</option>
-                            @foreach ($jenjangCounts as $jenjang => $count)
-                                <option value="{{ $jenjang }}">{{ $jenjang }} ({{ $count }} sekolah)
+                        <select id="filter-jenjang" @if ($isKepalaSekolah) disabled @endif
+                            class="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-2.5 pr-10 text-sm text-[#162040] font-medium focus:outline-none focus:ring-2 focus:ring-[#162040]/20 focus:border-[#162040] transition {{ $isKepalaSekolah ? 'cursor-not-allowed bg-gray-50 text-gray-600' : 'cursor-pointer' }}">
+                            @if ($isKepalaSekolah)
+                                <option value="{{ $lockedJenjang }}" selected>
+                                    {{ $lockedJenjang }} ({{ $sekolahList->count() }} sekolah)
                                 </option>
-                            @endforeach
+                            @else
+                                <option value="">Semua Jenjang ({{ $sekolahList->count() }} sekolah)</option>
+                                @foreach ($jenjangCounts as $jenjang => $count)
+                                    <option value="{{ $jenjang }}">{{ $jenjang }} ({{ $count }} sekolah)
+                                    </option>
+                                @endforeach
+                            @endif
                         </select>
                         <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
                             fill="none" stroke="currentColor" viewBox="0 0 24 24">

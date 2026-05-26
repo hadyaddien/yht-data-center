@@ -20,6 +20,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_active',
         'provinsi_id',
         'sekolah_id',
         'avatar',
@@ -35,6 +36,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
+            'is_active'         => 'boolean',
         ];
     }
 
@@ -69,6 +71,11 @@ class User extends Authenticatable
     }
 
     public function canManageSekolahData(): bool
+    {
+        return $this->isSuperAdmin() || $this->isKepalaSekolah();
+    }
+
+    public function canCreateSekolahData(): bool
     {
         return $this->isSuperAdmin();
     }

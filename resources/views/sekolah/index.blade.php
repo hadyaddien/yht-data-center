@@ -6,6 +6,7 @@
 
     @php
         $canManageSekolah = auth()->user()->canManageSekolahData();
+        $canCreateSekolah = auth()->user()->canCreateSekolahData();
     @endphp
 
     {{-- Flash Messages --}}
@@ -30,7 +31,7 @@
             <h1 class="text-2xl font-bold text-[#162040]">Data Sekolah</h1>
             <p class="text-sm text-gray-500 mt-1">{{ $total }} sekolah terdaftar</p>
         </div>
-        @if ($canManageSekolah)
+        @if ($canCreateSekolah)
             <a href="{{ route('sekolah.create') }}"
                 class="flex items-center gap-2 bg-[#162040] hover:bg-[#1e2f5a] text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

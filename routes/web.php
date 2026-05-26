@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard',           [DashboardController::class,       'index'])->name('dashboard');
     Route::resource('sekolah',         SekolahController::class);
     Route::resource('users',           UserController::class);
+    Route::patch('/users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
     Route::get('/api/kota-kabupaten',  [SekolahController::class, 'kotaByProvinsi'])->name('api.kota');
     Route::get('/api/kecamatan',       [SekolahController::class, 'kecamatanByKota'])->name('api.kecamatan');
     Route::get('/api/kelurahan',       [SekolahController::class, 'kelurahanByKecamatan'])->name('api.kelurahan');

@@ -12,15 +12,41 @@ use Illuminate\Http\Request;
 
 class SekolahController extends Controller
 {
-    private function authorizeManageSekolah(): void
+    private function authorizeCreateSekolah(): void
     {
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
         abort_unless(
-            $user->canManageSekolahData(),
+            $user->canCreateSekolahData(),
             403,
             'Hanya Super Admin yang dapat mengubah data sekolah.'
+        );
+    }
+
+    private function authorizeManageExistingSekolah(Sekolah $sekolah): void
+    {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        abort_unless($user->canManageSekolahData(), 403, 'Anda tidak memiliki akses untuk mengubah data sekolah.');
+
+        $canManage = $user
+            ->applySekolahScope(Sekolah::query()->whereKey($sekolah->id))
+            ->exists();
+
+        abort_unless($canManage, 403, 'Anda tidak memiliki akses ke data sekolah ini.');
+    }
+
+    private function authorizeReferenceDataAccess(): void
+    {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        abort_unless(
+            $user->isSuperAdmin() || $user->isKepalaSekolah(),
+            403,
+            'Anda tidak memiliki akses ke data referensi wilayah.'
         );
     }
 
@@ -68,7 +94,7 @@ class SekolahController extends Controller
     /* ─── CREATE FORM ──────────────────────────────────── */
     public function create()
     {
-        $this->authorizeManageSekolah();
+        $this->authorizeCreateSekolah();
 
         $provinsiList = Provinsi::orderBy('nama')->get();
         $kotaList     = collect();
@@ -80,7 +106,7 @@ class SekolahController extends Controller
     /* ─── STORE ─────────────────────────────────────────── */
     public function store(Request $request)
     {
-        $this->authorizeManageSekolah();
+        $this->authorizeCreateSekolah();
 
         $validated = $request->validate(
             array_merge($this->rules(), $this->programPendidikanRules(), $this->teknologiRules()),
@@ -118,7 +144,7 @@ class SekolahController extends Controller
     /* ─── EDIT FORM ─────────────────────────────────────── */
     public function edit(Sekolah $sekolah)
     {
-        $this->authorizeManageSekolah();
+        $this->authorizeManageExistingSekolah($sekolah);
 
         $sekolah->load(['kota', 'provinsi']);
         $provinsiList   = Provinsi::orderBy('nama')->get();
@@ -144,7 +170,7 @@ class SekolahController extends Controller
     /* ─── UPDATE ────────────────────────────────────────── */
     public function update(Request $request, Sekolah $sekolah)
     {
-        $this->authorizeManageSekolah();
+        $this->authorizeManageExistingSekolah($sekolah);
 
         $validated = $request->validate(
             array_merge($this->rules($sekolah->id), $this->programPendidikanRules(), $this->teknologiRules()),
@@ -173,7 +199,7 @@ class SekolahController extends Controller
     /* ─── DESTROY ───────────────────────────────────────── */
     public function destroy(Sekolah $sekolah)
     {
-        $this->authorizeManageSekolah();
+        $this->authorizeManageExistingSekolah($sekolah);
 
         $nama = $sekolah->nama;
         $sekolah->delete();
@@ -185,7 +211,7 @@ class SekolahController extends Controller
     /* ─── AJAX: kota by provinsi ─────────────────────────── */
     public function kotaByProvinsi(Request $request)
     {
-        $this->authorizeManageSekolah();
+        $this->authorizeReferenceDataAccess();
 
         $kota = KotaKabupaten::where('provinsi_id', $request->provinsi_id)
             ->orderBy('nama')
@@ -197,7 +223,7 @@ class SekolahController extends Controller
     /* ─── AJAX: kecamatan by kota ────────────────────────── */
     public function kecamatanByKota(Request $request)
     {
-        $this->authorizeManageSekolah();
+        $this->authorizeReferenceDataAccess();
 
         $kecamatan = Kecamatan::where('kota_kabupaten_id', $request->kota_id)
             ->orderBy('nama')
@@ -209,7 +235,7 @@ class SekolahController extends Controller
     /* ─── AJAX: kelurahan by kecamatan ───────────────────── */
     public function kelurahanByKecamatan(Request $request)
     {
-        $this->authorizeManageSekolah();
+        $this->authorizeReferenceDataAccess();
 
         $kec = Kecamatan::where('nama', $request->kecamatan_nama)
             ->where('kota_kabupaten_id', $request->kota_id)
