@@ -75,6 +75,11 @@ class User extends Authenticatable
         return $this->isSuperAdmin() || $this->isKepalaSekolah();
     }
 
+    public function canManageSdmData(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdminWilayah() || $this->isKepalaSekolah();
+    }
+
     public function canCreateSekolahData(): bool
     {
         return $this->isSuperAdmin();

@@ -332,6 +332,9 @@
                 $totalGuru = $sdm ? $sdm->guru_pns + $sdm->guru_honorer + $sdm->guru_p3k : 0;
                 $guruTetap = $sdm ? $sdm->guru_pns + $sdm->guru_p3k : 0;
                 $totalKaryawan = $sdm ? $sdm->karyawan_pns + $sdm->karyawan_honorer + $sdm->karyawan_p3k : 0;
+                $muridTotal = $sdm ? $sdm->jumlah_murid_total : 0;
+                $muridLaki = $sdm ? $sdm->jumlah_murid_laki : 0;
+                $muridPerempuan = $sdm ? $sdm->jumlah_murid_perempuan : 0;
                 $jenjang = $sekolah->jenjang;
                 $badgeClass = match ($jenjang) {
                     'KB' => 'badge-KB',
@@ -567,6 +570,42 @@
                             <td>Jumlah Rombel</td>
                             <td>{{ $sdm ? $sdm->jumlah_rombel ?? '-' : '-' }}</td>
                         </tr>
+                        <tr>
+                            <td>Jumlah Murid</td>
+                            <td>{{ $sdm ? $muridTotal : '-' }}</td>
+                            <td>Murid Laki-laki</td>
+                            <td>{{ $sdm ? $muridLaki : '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td>Murid Perempuan</td>
+                            <td>{{ $sdm ? $muridPerempuan : '-' }}</td>
+                            <td>Ortu PNS</td>
+                            <td>{{ $sdm ? $sdm->murid_ortu_pns ?? '-' : '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td>Ortu TNI AL</td>
+                            <td>{{ $sdm ? $sdm->murid_ortu_tni_al ?? '-' : '-' }}</td>
+                            <td>Ortu TNI</td>
+                            <td>{{ $sdm ? $sdm->murid_ortu_tni ?? '-' : '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td>Ortu Polisi</td>
+                            <td>{{ $sdm ? $sdm->murid_ortu_polisi ?? '-' : '-' }}</td>
+                            <td>Ortu Pengusaha</td>
+                            <td>{{ $sdm ? $sdm->murid_ortu_pengusaha ?? '-' : '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td>Ortu Wiraswasta</td>
+                            <td>{{ $sdm ? $sdm->murid_ortu_wiraswasta ?? '-' : '-' }}</td>
+                            <td>Ortu Buruh</td>
+                            <td>{{ $sdm ? $sdm->murid_ortu_buruh ?? '-' : '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td>Ortu Guru</td>
+                            <td>{{ $sdm ? $sdm->murid_ortu_guru ?? '-' : '-' }}</td>
+                            <td>Ortu Lainnya</td>
+                            <td>{{ $sdm ? $sdm->murid_ortu_lainnya_jumlah ?? '-' : '-' }}</td>
+                        </tr>
                     </table>
                 </div>
 
@@ -608,6 +647,18 @@
                         'guru_bersertifikasi' => $sdm?->guru_bersertifikasi,
                         'total_karyawan' => $totalKaryawan,
                         'jumlah_rombel' => $sdm?->jumlah_rombel,
+                        'jumlah_murid_total' => $sdm?->jumlah_murid_total,
+                        'jumlah_murid_laki' => $sdm?->jumlah_murid_laki,
+                        'jumlah_murid_perempuan' => $sdm?->jumlah_murid_perempuan,
+                        'murid_ortu_tni_al' => $sdm?->murid_ortu_tni_al,
+                        'murid_ortu_tni' => $sdm?->murid_ortu_tni,
+                        'murid_ortu_polisi' => $sdm?->murid_ortu_polisi,
+                        'murid_ortu_pns' => $sdm?->murid_ortu_pns,
+                        'murid_ortu_pengusaha' => $sdm?->murid_ortu_pengusaha,
+                        'murid_ortu_wiraswasta' => $sdm?->murid_ortu_wiraswasta,
+                        'murid_ortu_buruh' => $sdm?->murid_ortu_buruh,
+                        'murid_ortu_guru' => $sdm?->murid_ortu_guru,
+                        'murid_ortu_lainnya_jumlah' => $sdm?->murid_ortu_lainnya_jumlah,
                         'kurikulum' => $program?->kurikulum,
                         'program_unggulan' => $program?->program_unggulan,
                         'lab_komputer' => $tek ? ($tek->memiliki_lab_komputer ? 'Ada' : 'Tidak') : null,
@@ -716,7 +767,9 @@
                     }
                     if (checkedSections.includes('sdm')) {
                         headers.push('Total Guru', 'Guru Tetap', 'Guru Honorer', 'Guru Sertifikasi', 'Total Karyawan',
-                            'Jumlah Rombel');
+                            'Jumlah Rombel', 'Jumlah Murid', 'Murid Laki-laki', 'Murid Perempuan', 'Ortu TNI AL',
+                            'Ortu TNI', 'Ortu Polisi', 'Ortu PNS', 'Ortu Pengusaha', 'Ortu Wiraswasta',
+                            'Ortu Buruh', 'Ortu Guru', 'Ortu Lainnya Jumlah');
                     }
                     if (checkedSections.includes('program')) {
                         headers.push('Kurikulum', 'Program Unggulan');
@@ -739,7 +792,12 @@
                         }
                         if (checkedSections.includes('sdm')) {
                             row.push(s.total_guru, s.guru_tetap, s.guru_honorer, s.guru_bersertifikasi, s
-                                .total_karyawan, s.jumlah_rombel);
+                                .total_karyawan, s.jumlah_rombel, s.jumlah_murid_total, s.jumlah_murid_laki,
+                                s
+                                .jumlah_murid_perempuan, s.murid_ortu_tni_al, s.murid_ortu_tni, s
+                                .murid_ortu_polisi,
+                                s.murid_ortu_pns, s.murid_ortu_pengusaha, s.murid_ortu_wiraswasta, s
+                                .murid_ortu_buruh, s.murid_ortu_guru, s.murid_ortu_lainnya_jumlah);
                         }
                         if (checkedSections.includes('program')) {
                             row.push(s.kurikulum, s.program_unggulan);

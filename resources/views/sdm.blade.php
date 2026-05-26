@@ -44,6 +44,7 @@
                 $sdm = $sekolah->sdm->first();
                 $guru = $sekolah->sdmGuru;
                 $jenjang = $sekolah->jenjang;
+                $bodyOpen = auth()->user()->isKepalaSekolah();
 
                 $badgeConfig = [
                     'KB' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
@@ -63,6 +64,21 @@
                 $karyTetap = $sdm ? $sdm->karyawan_pns + $sdm->karyawan_p3k : 0;
                 $karyTidakTetap = $sdm ? $sdm->karyawan_honorer : 0;
                 $jumlahRombel = $sdm ? $sdm->jumlah_rombel : 0;
+
+                $muridTotal = $sdm ? $sdm->jumlah_murid_total : 0;
+                $muridLaki = $sdm ? $sdm->jumlah_murid_laki : 0;
+                $muridPerempuan = $sdm ? $sdm->jumlah_murid_perempuan : 0;
+                $ortuCounts = [
+                    'TNI AL' => $sdm?->murid_ortu_tni_al ?? 0,
+                    'TNI' => $sdm?->murid_ortu_tni ?? 0,
+                    'POLISI' => $sdm?->murid_ortu_polisi ?? 0,
+                    'PNS' => $sdm?->murid_ortu_pns ?? 0,
+                    'Pengusaha' => $sdm?->murid_ortu_pengusaha ?? 0,
+                    'Wiraswasta' => $sdm?->murid_ortu_wiraswasta ?? 0,
+                    'Buruh' => $sdm?->murid_ortu_buruh ?? 0,
+                    'Guru' => $sdm?->murid_ortu_guru ?? 0,
+                ];
+                $ortuLainJumlah = $sdm?->murid_ortu_lainnya_jumlah ?? 0;
 
                 // Kualifikasi from sdm_guru records
                 $kualifikasi = $guru->groupBy('kualifikasi')->map->count();
@@ -88,14 +104,14 @@
                         </div>
                     </div>
                     <svg class="sdm-chevron w-4 h-4 group-hover:text-amber-500 transition-all flex-shrink-0"
-                        @if (auth()->user()->isKepalaSekolah()) style="transform: rotate(90deg)" @endif fill="none"
+                        @if ($bodyOpen) style="transform: rotate(90deg)" @endif fill="none"
                         stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
 
                 {{-- Accordion Body --}}
-                <div class="sdm-body {{ auth()->user()->isKepalaSekolah() ? '' : 'hidden' }} px-5 pb-5">
+                <div class="sdm-body {{ $bodyOpen ? '' : 'hidden' }} px-5 pb-5">
 
                     {{-- Stat Cards Row 1: Guru --}}
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
@@ -196,6 +212,62 @@
                                     </span>
                                 </div>
                             </div>
+                        </div>
+
+                    </div>
+
+                    {{-- Data Siswa --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-4">
+
+                        <div>
+                            <p class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Data Siswa</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div class="border border-gray-100 rounded-xl p-4">
+                                    <p class="text-xs text-gray-400 mb-1">Jumlah Murid</p>
+                                    <p class="text-xl font-bold text-[#162040]">{{ $muridTotal }}
+                                        <span class="text-xs font-normal text-blue-400">orang</span>
+                                    </p>
+                                </div>
+                                <div class="border border-gray-100 rounded-xl p-4">
+                                    <p class="text-xs text-gray-400 mb-1">Murid Laki-laki</p>
+                                    <p class="text-xl font-bold text-[#162040]">{{ $muridLaki }}
+                                        <span class="text-xs font-normal text-blue-400">orang</span>
+                                    </p>
+                                </div>
+                                <div class="border border-gray-100 rounded-xl p-4">
+                                    <p class="text-xs text-gray-400 mb-1">Murid Perempuan</p>
+                                    <p class="text-xl font-bold text-[#162040]">{{ $muridPerempuan }}
+                                        <span class="text-xs font-normal text-blue-400">orang</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Pekerjaan Orang
+                                Tua</p>
+                            @if (!$sdm)
+                                <p class="text-sm text-gray-300">-</p>
+                            @else
+                                <div class="space-y-2">
+                                    @foreach ($ortuCounts as $label => $value)
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-500">{{ $label }}</span>
+                                            <span class="text-sm font-medium text-gray-700">
+                                                {{ $value }} murid
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                    @if ($ortuLainJumlah > 0)
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-500">Lainnya</span>
+                                            <span class="text-sm font-medium text-gray-700">
+                                                {{ $ortuLainJumlah }} murid
+                                            </span>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
 
                     </div>

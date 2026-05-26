@@ -6,9 +6,11 @@ use App\Models\Kecamatan;
 use App\Models\KotaKabupaten;
 use App\Models\ProgramPendidikan;
 use App\Models\Provinsi;
+use App\Models\Sdm;
 use App\Models\Sekolah;
 use App\Models\TeknologiPembelajaran;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class SekolahController extends Controller
 {
@@ -109,7 +111,7 @@ class SekolahController extends Controller
         $this->authorizeCreateSekolah();
 
         $validated = $request->validate(
-            array_merge($this->rules(), $this->programPendidikanRules(), $this->teknologiRules()),
+            array_merge($this->rules(), $this->programPendidikanRules(), $this->teknologiRules(), $this->sdmRules()),
             $this->messages()
         );
         $validated = $this->enrichAkreditasiPredikat($validated);
@@ -127,6 +129,7 @@ class SekolahController extends Controller
         }
 
         $this->saveTeknologiPembelajaran($request, $sekolah);
+        $this->saveSdmSiswa($request, $sekolah);
 
         return redirect()->route('sekolah.index')
             ->with('success', "Sekolah \"{$sekolah->nama}\" berhasil ditambahkan.");
@@ -163,8 +166,9 @@ class SekolahController extends Controller
         $tahunList          = range(date('Y'), 1900);
         $programPendidikan  = $sekolah->programPendidikan()->first();
         $teknologiPembelajaran = $sekolah->teknologiPembelajaran()->first();
+        $sdm = $sekolah->sdm()->orderBy('tahun_ajaran', 'desc')->first();
 
-        return view('sekolah.edit', compact('sekolah', 'provinsiList', 'kotaList', 'kecamatanList', 'kelurahanList', 'tahunList', 'programPendidikan', 'teknologiPembelajaran'));
+        return view('sekolah.edit', compact('sekolah', 'provinsiList', 'kotaList', 'kecamatanList', 'kelurahanList', 'tahunList', 'programPendidikan', 'teknologiPembelajaran', 'sdm'));
     }
 
     /* ─── UPDATE ────────────────────────────────────────── */
@@ -173,7 +177,7 @@ class SekolahController extends Controller
         $this->authorizeManageExistingSekolah($sekolah);
 
         $validated = $request->validate(
-            array_merge($this->rules($sekolah->id), $this->programPendidikanRules(), $this->teknologiRules()),
+            array_merge($this->rules($sekolah->id), $this->programPendidikanRules(), $this->teknologiRules(), $this->sdmRules()),
             $this->messages()
         );
         $validated = $this->enrichAkreditasiPredikat($validated);
@@ -191,6 +195,7 @@ class SekolahController extends Controller
         }
 
         $this->saveTeknologiPembelajaran($request, $sekolah);
+        $this->saveSdmSiswa($request, $sekolah);
 
         return redirect()->route('sekolah.index')
             ->with('success', "Data \"{$sekolah->nama}\" berhasil diperbarui.");
@@ -344,6 +349,26 @@ class SekolahController extends Controller
         ];
     }
 
+    private function sdmRules(): array
+    {
+        return [
+            'sdm' => ['sometimes', 'array'],
+            'sdm.jumlah_rombel' => ['nullable', 'integer', 'min:0'],
+            'sdm.jumlah_murid_total' => ['nullable', 'integer', 'min:0'],
+            'sdm.jumlah_murid_laki' => ['nullable', 'integer', 'min:0'],
+            'sdm.jumlah_murid_perempuan' => ['nullable', 'integer', 'min:0'],
+            'sdm.murid_ortu_tni_al' => ['nullable', 'integer', 'min:0'],
+            'sdm.murid_ortu_tni' => ['nullable', 'integer', 'min:0'],
+            'sdm.murid_ortu_polisi' => ['nullable', 'integer', 'min:0'],
+            'sdm.murid_ortu_pns' => ['nullable', 'integer', 'min:0'],
+            'sdm.murid_ortu_pengusaha' => ['nullable', 'integer', 'min:0'],
+            'sdm.murid_ortu_wiraswasta' => ['nullable', 'integer', 'min:0'],
+            'sdm.murid_ortu_buruh' => ['nullable', 'integer', 'min:0'],
+            'sdm.murid_ortu_guru' => ['nullable', 'integer', 'min:0'],
+            'sdm.murid_ortu_lainnya_jumlah' => ['nullable', 'integer', 'min:0'],
+        ];
+    }
+
     private function messages(): array
     {
         return [
@@ -417,6 +442,97 @@ class SekolahController extends Controller
         TeknologiPembelajaran::updateOrCreate(
             ['sekolah_id' => $sekolah->id, 'tahun_ajaran' => '2024/2025'],
             $tpData
+        );
+    }
+
+    private function saveSdmSiswa(Request $request, Sekolah $sekolah): void
+    {
+        $sdmInput = $request->input('sdm', []);
+        if (empty($sdmInput)) {
+            return;
+        }
+
+        $muridLaki = (int) ($sdmInput['jumlah_murid_laki'] ?? 0);
+        $muridPerempuan = (int) ($sdmInput['jumlah_murid_perempuan'] ?? 0);
+        $muridTotal = $muridLaki + $muridPerempuan;
+
+        $ortuFields = [
+            'murid_ortu_tni_al',
+            'murid_ortu_tni',
+            'murid_ortu_polisi',
+            'murid_ortu_pns',
+            'murid_ortu_pengusaha',
+            'murid_ortu_wiraswasta',
+            'murid_ortu_buruh',
+            'murid_ortu_guru',
+        ];
+
+        $jumlahOrtu = 0;
+        foreach ($ortuFields as $field) {
+            $jumlahOrtu += (int) ($sdmInput[$field] ?? 0);
+        }
+
+        if ($jumlahOrtu > $muridTotal) {
+            throw ValidationException::withMessages([
+                'sdm.murid_ortu_lainnya_jumlah' => 'Jumlah pekerjaan orang tua melebihi total murid.',
+            ]);
+        }
+
+        $lainnyaJumlah = max(0, $muridTotal - $jumlahOrtu);
+
+        $data = [
+            'tahun_ajaran' => '2024/2025',
+            'jumlah_rombel' => (int) ($sdmInput['jumlah_rombel'] ?? 0),
+            'jumlah_murid_total' => $muridTotal,
+            'jumlah_murid_laki' => $muridLaki,
+            'jumlah_murid_perempuan' => $muridPerempuan,
+            'murid_ortu_tni_al' => (int) ($sdmInput['murid_ortu_tni_al'] ?? 0),
+            'murid_ortu_tni' => (int) ($sdmInput['murid_ortu_tni'] ?? 0),
+            'murid_ortu_polisi' => (int) ($sdmInput['murid_ortu_polisi'] ?? 0),
+            'murid_ortu_pns' => (int) ($sdmInput['murid_ortu_pns'] ?? 0),
+            'murid_ortu_pengusaha' => (int) ($sdmInput['murid_ortu_pengusaha'] ?? 0),
+            'murid_ortu_wiraswasta' => (int) ($sdmInput['murid_ortu_wiraswasta'] ?? 0),
+            'murid_ortu_buruh' => (int) ($sdmInput['murid_ortu_buruh'] ?? 0),
+            'murid_ortu_guru' => (int) ($sdmInput['murid_ortu_guru'] ?? 0),
+            'murid_ortu_lainnya_label' => null,
+            'murid_ortu_lainnya_jumlah' => $lainnyaJumlah,
+            'updated_by' => auth()->id(),
+        ];
+
+        $fieldsToCheck = [
+            'jumlah_rombel',
+            'jumlah_murid_total',
+            'jumlah_murid_laki',
+            'jumlah_murid_perempuan',
+            'murid_ortu_tni_al',
+            'murid_ortu_tni',
+            'murid_ortu_polisi',
+            'murid_ortu_pns',
+            'murid_ortu_pengusaha',
+            'murid_ortu_wiraswasta',
+            'murid_ortu_buruh',
+            'murid_ortu_guru',
+            'murid_ortu_lainnya_jumlah',
+        ];
+
+        $hasInput = false;
+        foreach ($fieldsToCheck as $field) {
+            if (!array_key_exists($field, $sdmInput)) {
+                continue;
+            }
+            if ($sdmInput[$field] !== '' && $sdmInput[$field] !== null) {
+                $hasInput = true;
+                break;
+            }
+        }
+
+        if (! $hasInput) {
+            return;
+        }
+
+        Sdm::updateOrCreate(
+            ['sekolah_id' => $sekolah->id, 'tahun_ajaran' => '2024/2025'],
+            $data
         );
     }
 }

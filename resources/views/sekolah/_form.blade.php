@@ -72,7 +72,7 @@
         'laptop_ext_hd_dari_pemerintah' => 'Laptop & Ext HD dari Pemerintah',
     ];
 
-    $sdmData = $sumberDayaManusia ?? $sdmSekolah ?? $sdm ?? null;
+    $sdmData = $sumberDayaManusia ?? ($sdmSekolah ?? ($sdm ?? null));
 
     $pv_sdm = fn(string $f, $d = '') => old("sdm.$f", $sdmData?->{$f} ?? $d);
 @endphp
@@ -100,7 +100,7 @@
         border-bottom: 1px solid #eef2f7;
     }
 
-    #sekolah-form .tab-panel > .form-section:last-child {
+    #sekolah-form .tab-panel>.form-section:last-child {
         padding-bottom: 0;
         margin-bottom: 0;
         border-bottom: 0;
@@ -897,20 +897,16 @@
                         <div class="flex items-center gap-3 shrink-0">
                             <span class="text-xs text-gray-500">Ada</span>
 
-                            <label for="{{ $toggleId }}" class="relative inline-flex items-center cursor-pointer">
+                            <label for="{{ $toggleId }}"
+                                class="relative inline-flex items-center cursor-pointer">
                                 <input type="hidden" name="sp[{{ $adaField }}]" value="0">
 
-                                <input
-                                    id="{{ $toggleId }}"
-                                    type="checkbox"
-                                    name="sp[{{ $adaField }}]"
-                                    value="1"
-                                    class="sr-only peer sarpras-toggle"
-                                    data-target="{{ $inputId }}"
-                                    {{ $isAda ? 'checked' : '' }}
-                                >
+                                <input id="{{ $toggleId }}" type="checkbox" name="sp[{{ $adaField }}]"
+                                    value="1" class="sr-only peer sarpras-toggle"
+                                    data-target="{{ $inputId }}" {{ $isAda ? 'checked' : '' }}>
 
-                                <div class="relative w-9 h-5 bg-gray-200 rounded-full transition-colors
+                                <div
+                                    class="relative w-9 h-5 bg-gray-200 rounded-full transition-colors
                                     peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#162040]/20
                                     peer-checked:bg-[#162040]
                                     after:content-[''] after:absolute after:top-[2px] after:left-[2px]
@@ -922,19 +918,11 @@
 
                             <div id="{{ $inputId }}-wrap"
                                 class="flex items-center gap-1.5 {{ $isAda ? '' : 'hidden' }}">
-                                <input
-                                    id="{{ $inputId }}"
-                                    type="number"
-                                    name="sp[{{ $kondisiField }}]"
-                                    value="{{ $pv_sp($kondisiField) }}"
-                                    min="0"
-                                    max="100"
-                                    step="1"
-                                    inputmode="numeric"
-                                    placeholder="0"
+                                <input id="{{ $inputId }}" type="number" name="sp[{{ $kondisiField }}]"
+                                    value="{{ $pv_sp($kondisiField) }}" min="0" max="100"
+                                    step="1" inputmode="numeric" placeholder="0"
                                     class="sarpras-percent w-20 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-[#162040] outline-none focus:border-[#162040] focus:ring-2 focus:ring-[#162040]/10"
-                                    {{ $isAda ? '' : 'disabled' }}
-                                >
+                                    {{ $isAda ? '' : 'disabled' }}>
                                 <span class="text-xs text-gray-400">%</span>
                             </div>
                         </div>
@@ -953,16 +941,9 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-5 gap-y-4">
                 <div>
                     <label class="form-label">Luas Tanah (m²)</label>
-                    <input
-                        type="number"
-                        name="sp[luas_tanah]"
-                        value="{{ $pv_sp('luas_tanah') }}"
-                        min="0"
-                        step="0.01"
-                        inputmode="decimal"
-                        placeholder="Contoh: 1500"
-                        class="form-input sarpras-decimal"
-                    >
+                    <input type="number" name="sp[luas_tanah]" value="{{ $pv_sp('luas_tanah') }}" min="0"
+                        step="0.01" inputmode="decimal" placeholder="Contoh: 1500"
+                        class="form-input sarpras-decimal">
                     @error('sp.luas_tanah')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
@@ -970,16 +951,9 @@
 
                 <div>
                     <label class="form-label">Luas Bangunan (m²)</label>
-                    <input
-                        type="number"
-                        name="sp[luas_bangunan]"
-                        value="{{ $pv_sp('luas_bangunan') }}"
-                        min="0"
-                        step="0.01"
-                        inputmode="decimal"
-                        placeholder="Contoh: 750"
-                        class="form-input sarpras-decimal"
-                    >
+                    <input type="number" name="sp[luas_bangunan]" value="{{ $pv_sp('luas_bangunan') }}"
+                        min="0" step="0.01" inputmode="decimal" placeholder="Contoh: 750"
+                        class="form-input sarpras-decimal">
                     @error('sp.luas_bangunan')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
@@ -987,16 +961,9 @@
 
                 <div>
                     <label class="form-label">Biaya Sewa Lahan (Rp)</label>
-                    <input
-                        type="number"
-                        name="sp[biaya_sewa_lahan]"
-                        value="{{ $pv_sp('biaya_sewa_lahan') }}"
-                        min="0"
-                        step="1"
-                        inputmode="numeric"
-                        placeholder="Contoh: 5000000"
-                        class="form-input sarpras-integer"
-                    >
+                    <input type="number" name="sp[biaya_sewa_lahan]" value="{{ $pv_sp('biaya_sewa_lahan') }}"
+                        min="0" step="1" inputmode="numeric" placeholder="Contoh: 5000000"
+                        class="form-input sarpras-integer">
                     @error('sp.biaya_sewa_lahan')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
@@ -1022,16 +989,9 @@
                 <div>
                     <label class="form-label">Jumlah Rombongan Belajar</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[jumlah_rombel]"
-                            value="{{ $pv_sdm('jumlah_rombel') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 12"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[jumlah_rombel]" value="{{ $pv_sdm('jumlah_rombel') }}"
+                            min="0" step="1" inputmode="numeric" placeholder="Contoh: 12"
+                            class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">kelas</span>
                     </div>
                     @error('sdm.jumlah_rombel')
@@ -1042,16 +1002,9 @@
                 <div>
                     <label class="form-label">Jumlah Guru</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[jumlah_guru]"
-                            value="{{ $pv_sdm('jumlah_guru') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 24"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[jumlah_guru]" value="{{ $pv_sdm('jumlah_guru') }}"
+                            min="0" step="1" inputmode="numeric" placeholder="Contoh: 24"
+                            class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">orang</span>
                     </div>
                     @error('sdm.jumlah_guru')
@@ -1062,16 +1015,9 @@
                 <div>
                     <label class="form-label">Guru Tetap Yayasan (GTY)</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[guru_tetap_yayasan]"
-                            value="{{ $pv_sdm('guru_tetap_yayasan') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 15"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[guru_tetap_yayasan]"
+                            value="{{ $pv_sdm('guru_tetap_yayasan') }}" min="0" step="1"
+                            inputmode="numeric" placeholder="Contoh: 15" class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">orang</span>
                     </div>
                     @error('sdm.guru_tetap_yayasan')
@@ -1082,16 +1028,9 @@
                 <div>
                     <label class="form-label">Guru Tidak Tetap (GTT)</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[guru_tidak_tetap]"
-                            value="{{ $pv_sdm('guru_tidak_tetap') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 9"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[guru_tidak_tetap]"
+                            value="{{ $pv_sdm('guru_tidak_tetap') }}" min="0" step="1"
+                            inputmode="numeric" placeholder="Contoh: 9" class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">orang</span>
                     </div>
                     @error('sdm.guru_tidak_tetap')
@@ -1102,16 +1041,9 @@
                 <div>
                     <label class="form-label">Guru S1 Pendidikan</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[guru_s1_pendidikan]"
-                            value="{{ $pv_sdm('guru_s1_pendidikan') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 18"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[guru_s1_pendidikan]"
+                            value="{{ $pv_sdm('guru_s1_pendidikan') }}" min="0" step="1"
+                            inputmode="numeric" placeholder="Contoh: 18" class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">orang</span>
                     </div>
                     @error('sdm.guru_s1_pendidikan')
@@ -1122,16 +1054,9 @@
                 <div>
                     <label class="form-label">Guru S1 Non Pendidikan</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[guru_s1_non_pendidikan]"
-                            value="{{ $pv_sdm('guru_s1_non_pendidikan') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 3"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[guru_s1_non_pendidikan]"
+                            value="{{ $pv_sdm('guru_s1_non_pendidikan') }}" min="0" step="1"
+                            inputmode="numeric" placeholder="Contoh: 3" class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">orang</span>
                     </div>
                     @error('sdm.guru_s1_non_pendidikan')
@@ -1142,16 +1067,9 @@
                 <div>
                     <label class="form-label">Guru S2</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[guru_s2]"
-                            value="{{ $pv_sdm('guru_s2') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 4"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[guru_s2]" value="{{ $pv_sdm('guru_s2') }}" min="0"
+                            step="1" inputmode="numeric" placeholder="Contoh: 4"
+                            class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">orang</span>
                     </div>
                     @error('sdm.guru_s2')
@@ -1162,16 +1080,9 @@
                 <div>
                     <label class="form-label">Guru S3</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[guru_s3]"
-                            value="{{ $pv_sdm('guru_s3') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 0"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[guru_s3]" value="{{ $pv_sdm('guru_s3') }}" min="0"
+                            step="1" inputmode="numeric" placeholder="Contoh: 0"
+                            class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">orang</span>
                     </div>
                     @error('sdm.guru_s3')
@@ -1182,16 +1093,9 @@
                 <div>
                     <label class="form-label">Guru Sertifikasi</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[guru_sertifikasi]"
-                            value="{{ $pv_sdm('guru_sertifikasi') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 10"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[guru_sertifikasi]"
+                            value="{{ $pv_sdm('guru_sertifikasi') }}" min="0" step="1"
+                            inputmode="numeric" placeholder="Contoh: 10" class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">orang</span>
                     </div>
                     @error('sdm.guru_sertifikasi')
@@ -1202,16 +1106,9 @@
                 <div>
                     <label class="form-label">Jumlah Karyawan</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[jumlah_karyawan]"
-                            value="{{ $pv_sdm('jumlah_karyawan') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 8"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[jumlah_karyawan]" value="{{ $pv_sdm('jumlah_karyawan') }}"
+                            min="0" step="1" inputmode="numeric" placeholder="Contoh: 8"
+                            class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">orang</span>
                     </div>
                     @error('sdm.jumlah_karyawan')
@@ -1222,16 +1119,9 @@
                 <div>
                     <label class="form-label">Karyawan Tetap (KTY)</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[karyawan_tetap]"
-                            value="{{ $pv_sdm('karyawan_tetap') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 5"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[karyawan_tetap]" value="{{ $pv_sdm('karyawan_tetap') }}"
+                            min="0" step="1" inputmode="numeric" placeholder="Contoh: 5"
+                            class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">orang</span>
                     </div>
                     @error('sdm.karyawan_tetap')
@@ -1242,16 +1132,9 @@
                 <div>
                     <label class="form-label">Karyawan Tidak Tetap (KTT)</label>
                     <div class="flex items-center gap-2">
-                        <input
-                            type="number"
-                            name="sdm[karyawan_tidak_tetap]"
-                            value="{{ $pv_sdm('karyawan_tidak_tetap') }}"
-                            min="0"
-                            step="1"
-                            inputmode="numeric"
-                            placeholder="Contoh: 3"
-                            class="form-input sdm-integer"
-                        >
+                        <input type="number" name="sdm[karyawan_tidak_tetap]"
+                            value="{{ $pv_sdm('karyawan_tidak_tetap') }}" min="0" step="1"
+                            inputmode="numeric" placeholder="Contoh: 3" class="form-input sdm-integer">
                         <span class="text-xs text-gray-500 shrink-0">orang</span>
                     </div>
                     @error('sdm.karyawan_tidak_tetap')
@@ -1259,6 +1142,159 @@
                     @enderror
                 </div>
 
+            </div>
+        </div>
+
+
+        {{-- DATA SISWA --}}
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="form-section-bar"></span>
+                <span class="form-section-label">Data Siswa</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-5 gap-y-4">
+                <div>
+                    <label class="form-label">Jumlah Murid Total</label>
+                    <input type="number" name="sdm[jumlah_murid_total]" id="sdm-murid-total"
+                        value="{{ $pv_sdm('jumlah_murid_total') }}" min="0" step="1"
+                        inputmode="numeric" placeholder="Otomatis"
+                        class="form-input sdm-integer bg-gray-50 text-gray-600 cursor-not-allowed" readonly>
+                    @error('sdm.jumlah_murid_total')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Jumlah Murid Laki-laki</label>
+                    <input type="number" name="sdm[jumlah_murid_laki]" id="sdm-murid-laki"
+                        value="{{ $pv_sdm('jumlah_murid_laki') }}" min="0" step="1"
+                        inputmode="numeric" placeholder="Contoh: 225" class="form-input sdm-integer">
+                    @error('sdm.jumlah_murid_laki')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Jumlah Murid Perempuan</label>
+                    <input type="number" name="sdm[jumlah_murid_perempuan]" id="sdm-murid-perempuan"
+                        value="{{ $pv_sdm('jumlah_murid_perempuan') }}" min="0" step="1"
+                        inputmode="numeric" placeholder="Contoh: 225" class="form-input sdm-integer">
+                    @error('sdm.jumlah_murid_perempuan')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <p class="text-[11px] text-gray-400 mt-2">Total otomatis dihitung dari L/P.</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-4 mt-3">
+                <div>
+                    <label class="form-label">Ortu TNI AL</label>
+                    <input type="number" name="sdm[murid_ortu_tni_al]" value="{{ $pv_sdm('murid_ortu_tni_al') }}"
+                        min="0" step="1" inputmode="numeric" placeholder="Contoh: 5"
+                        class="form-input sdm-integer" data-ortu-count>
+                    @error('sdm.murid_ortu_tni_al')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Ortu TNI</label>
+                    <input type="number" name="sdm[murid_ortu_tni]" value="{{ $pv_sdm('murid_ortu_tni') }}"
+                        min="0" step="1" inputmode="numeric" placeholder="Contoh: 8"
+                        class="form-input sdm-integer" data-ortu-count>
+                    @error('sdm.murid_ortu_tni')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Ortu Polisi</label>
+                    <input type="number" name="sdm[murid_ortu_polisi]" value="{{ $pv_sdm('murid_ortu_polisi') }}"
+                        min="0" step="1" inputmode="numeric" placeholder="Contoh: 6"
+                        class="form-input sdm-integer" data-ortu-count>
+                    @error('sdm.murid_ortu_polisi')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Ortu PNS</label>
+                    <input type="number" name="sdm[murid_ortu_pns]" value="{{ $pv_sdm('murid_ortu_pns') }}"
+                        min="0" step="1" inputmode="numeric" placeholder="Contoh: 20"
+                        class="form-input sdm-integer" data-ortu-count>
+                    @error('sdm.murid_ortu_pns')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Ortu Pengusaha</label>
+                    <input type="number" name="sdm[murid_ortu_pengusaha]"
+                        value="{{ $pv_sdm('murid_ortu_pengusaha') }}" min="0" step="1"
+                        inputmode="numeric" placeholder="Contoh: 15" class="form-input sdm-integer" data-ortu-count>
+                    @error('sdm.murid_ortu_pengusaha')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Ortu Wiraswasta</label>
+                    <input type="number" name="sdm[murid_ortu_wiraswasta]"
+                        value="{{ $pv_sdm('murid_ortu_wiraswasta') }}" min="0" step="1"
+                        inputmode="numeric" placeholder="Contoh: 40" class="form-input sdm-integer" data-ortu-count>
+                    @error('sdm.murid_ortu_wiraswasta')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Ortu Buruh</label>
+                    <input type="number" name="sdm[murid_ortu_buruh]" value="{{ $pv_sdm('murid_ortu_buruh') }}"
+                        min="0" step="1" inputmode="numeric" placeholder="Contoh: 60"
+                        class="form-input sdm-integer" data-ortu-count>
+                    @error('sdm.murid_ortu_buruh')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Ortu Guru</label>
+                    <input type="number" name="sdm[murid_ortu_guru]" value="{{ $pv_sdm('murid_ortu_guru') }}"
+                        min="0" step="1" inputmode="numeric" placeholder="Contoh: 10"
+                        class="form-input sdm-integer" data-ortu-count>
+                    @error('sdm.murid_ortu_guru')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                    <span>Total: <span data-ortu-total>0</span></span>
+                    <span>Terisi: <span data-ortu-terisi>0</span></span>
+                    <span>Sisa: <span data-ortu-sisa>0</span></span>
+                    <span class="text-rose-600 hidden" data-ortu-error>Jumlah melebihi total murid</span>
+                </div>
+                <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                    <div class="h-full bg-emerald-500 transition-all" data-ortu-bar style="width: 0%"></div>
+                </div>
+                <p class="mt-2 text-[11px] text-slate-500">Lainnya dihitung otomatis dari total - terisi.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4 mt-3">
+                <div>
+                    <label class="form-label">Ortu Lainnya (Jumlah)</label>
+                    <input type="number" name="sdm[murid_ortu_lainnya_jumlah]"
+                        value="{{ $pv_sdm('murid_ortu_lainnya_jumlah') }}" min="0" step="1"
+                        inputmode="numeric" placeholder="Otomatis"
+                        class="form-input sdm-integer bg-gray-50 text-gray-600 cursor-not-allowed" readonly
+                        data-ortu-lainnya>
+                    @error('sdm.murid_ortu_lainnya_jumlah')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
         </div>
 
@@ -1274,16 +1310,9 @@
 
                 <div>
                     <label class="form-label">Rata-rata Gaji Guru/bulan (Rp)</label>
-                    <input
-                        type="number"
-                        name="sdm[rata_gaji_guru]"
-                        value="{{ $pv_sdm('rata_gaji_guru') }}"
-                        min="0"
-                        step="1"
-                        inputmode="numeric"
-                        placeholder="Contoh: 3500000"
-                        class="form-input sdm-integer"
-                    >
+                    <input type="number" name="sdm[rata_gaji_guru]" value="{{ $pv_sdm('rata_gaji_guru') }}"
+                        min="0" step="1" inputmode="numeric" placeholder="Contoh: 3500000"
+                        class="form-input sdm-integer">
                     @error('sdm.rata_gaji_guru')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
@@ -1291,16 +1320,9 @@
 
                 <div>
                     <label class="form-label">Rata-rata Gaji Karyawan/bulan (Rp)</label>
-                    <input
-                        type="number"
-                        name="sdm[rata_gaji_karyawan]"
-                        value="{{ $pv_sdm('rata_gaji_karyawan') }}"
-                        min="0"
-                        step="1"
-                        inputmode="numeric"
-                        placeholder="Contoh: 2800000"
-                        class="form-input sdm-integer"
-                    >
+                    <input type="number" name="sdm[rata_gaji_karyawan]"
+                        value="{{ $pv_sdm('rata_gaji_karyawan') }}" min="0" step="1"
+                        inputmode="numeric" placeholder="Contoh: 2800000" class="form-input sdm-integer">
                     @error('sdm.rata_gaji_karyawan')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
@@ -1308,16 +1330,9 @@
 
                 <div>
                     <label class="form-label">Masa Jabatan Kepsek (tahun)</label>
-                    <input
-                        type="number"
-                        name="sdm[masa_jabatan_kepsek]"
-                        value="{{ $pv_sdm('masa_jabatan_kepsek') }}"
-                        min="0"
-                        step="1"
-                        inputmode="numeric"
-                        placeholder="Contoh: 4"
-                        class="form-input sdm-integer"
-                    >
+                    <input type="number" name="sdm[masa_jabatan_kepsek]"
+                        value="{{ $pv_sdm('masa_jabatan_kepsek') }}" min="0" step="1"
+                        inputmode="numeric" placeholder="Contoh: 4" class="form-input sdm-integer">
                     @error('sdm.masa_jabatan_kepsek')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
@@ -1336,12 +1351,8 @@
 
             <div>
                 <label class="form-label">Hambatan &amp; Tantangan</label>
-                <textarea
-                    name="sdm[hambatan_tantangan]"
-                    rows="4"
-                    placeholder="Tuliskan hambatan dan tantangan yang dihadapi..."
-                    class="form-input resize-none"
-                >{{ $pv_sdm('hambatan_tantangan') }}</textarea>
+                <textarea name="sdm[hambatan_tantangan]" rows="4"
+                    placeholder="Tuliskan hambatan dan tantangan yang dihadapi..." class="form-input resize-none">{{ $pv_sdm('hambatan_tantangan') }}</textarea>
 
                 @error('sdm.hambatan_tantangan')
                     <p class="form-error">{{ $message }}</p>
@@ -1742,11 +1753,101 @@
         });
     }
 
+    function initSdmMuridTotal() {
+        const totalInput = document.getElementById('sdm-murid-total');
+        const lakiInput = document.getElementById('sdm-murid-laki');
+        const perempuanInput = document.getElementById('sdm-murid-perempuan');
+
+        if (!totalInput || !lakiInput || !perempuanInput) {
+            return;
+        }
+
+        const syncTotal = function() {
+            const lakiRaw = (lakiInput.value || '').trim();
+            const perempuanRaw = (perempuanInput.value || '').trim();
+
+            if (lakiRaw === '' && perempuanRaw === '') {
+                totalInput.value = '';
+                return;
+            }
+
+            const laki = parseInt(lakiRaw || '0', 10);
+            const perempuan = parseInt(perempuanRaw || '0', 10);
+            const total = (isNaN(laki) ? 0 : laki) + (isNaN(perempuan) ? 0 : perempuan);
+            totalInput.value = total;
+        };
+
+        lakiInput.addEventListener('input', syncTotal);
+        perempuanInput.addEventListener('input', syncTotal);
+        syncTotal();
+    }
+
+    function initSdmOrtuComposition() {
+        const lakiInput = document.getElementById('sdm-murid-laki');
+        const perempuanInput = document.getElementById('sdm-murid-perempuan');
+        const countInputs = document.querySelectorAll('[data-ortu-count]');
+        const lainnyaInput = document.querySelector('[data-ortu-lainnya]');
+        const totalOut = document.querySelector('[data-ortu-total]');
+        const terisiOut = document.querySelector('[data-ortu-terisi]');
+        const sisaOut = document.querySelector('[data-ortu-sisa]');
+        const errorOut = document.querySelector('[data-ortu-error]');
+        const bar = document.querySelector('[data-ortu-bar]');
+
+        if (!lakiInput || !perempuanInput || !lainnyaInput || !countInputs.length) {
+            return;
+        }
+
+        const toNumber = function(value) {
+            const parsed = parseInt((value || '').toString().trim(), 10);
+            return Number.isNaN(parsed) ? 0 : parsed;
+        };
+
+        const recalc = function() {
+            const total = toNumber(lakiInput.value) + toNumber(perempuanInput.value);
+            let terisi = 0;
+            countInputs.forEach(function(input) {
+                terisi += toNumber(input.value);
+            });
+
+            const sisa = total - terisi;
+            const ratio = total > 0 ? Math.min(1, Math.max(0, terisi / total)) : 0;
+
+            if (total === 0 && terisi === 0) {
+                lainnyaInput.value = '';
+            } else {
+                lainnyaInput.value = Math.max(0, sisa);
+            }
+
+            if (totalOut) totalOut.textContent = total;
+            if (terisiOut) terisiOut.textContent = terisi;
+            if (sisaOut) sisaOut.textContent = sisa;
+
+            if (bar) {
+                bar.style.width = (ratio * 100) + '%';
+                bar.classList.toggle('bg-rose-500', sisa < 0);
+                bar.classList.toggle('bg-emerald-500', sisa >= 0);
+            }
+
+            if (errorOut) {
+                errorOut.classList.toggle('hidden', sisa >= 0);
+            }
+        };
+
+        countInputs.forEach(function(input) {
+            input.addEventListener('input', recalc);
+        });
+        lakiInput.addEventListener('input', recalc);
+        perempuanInput.addEventListener('input', recalc);
+        recalc();
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         initSelectClear();
         initNumericInputs();
         initSarprasToggle();
         initSarprasNumericInputs();
         initSdmNumericInputs();
+        initSdmMuridTotal();
+        initSdmOrtuComposition();
     });
 </script>
