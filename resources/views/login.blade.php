@@ -19,7 +19,7 @@
     </style>
 </head>
 
-<body class="h-full bg-white flex items-center justify-center p-4 md:p-8">
+<body class="h-full bg-[#162040] flex items-center justify-center p-4 md:p-8">
 
     <div class="w-full max-w-md">
 
@@ -34,15 +34,15 @@
                         d="M12 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 4a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm7.93 5H13v-1a1 1 0 0 0-2 0v1H4.07A1 1 0 0 0 3 12a9 9 0 0 0 8 8.94V22a1 1 0 0 0 2 0v-1.06A9 9 0 0 0 21 12a1 1 0 0 0-1.07-1zM12 19a7 7 0 0 1-6.92-6h2.04a5 5 0 0 0 9.76 0h2.04A7 7 0 0 1 12 19z" />
                 </svg>
             </div>
-            <h1 class="text-[#162040] text-[29px] font-extrabold tracking-tight leading-tight">YAYASAN HANG TUAH</h1>
-            <p class="text-[#6c7f9f] text-sm mt-1.5">Sistem Pendataan Satuan Pendidikan</p>
+            <h1 class="text-white text-3xl font-extrabold tracking-tight leading-tight">YAYASAN HANG TUAH</h1>
+            <p class="text-sm mt-1.5" style="color: #ffffff;">Sistem Pendataan Satuan Pendidikan</p>
         </div>
 
-        <div class="bg-[#162040] rounded-2xl shadow-[0_18px_40px_rgba(22,32,64,0.2)] p-8 border border-[#1f3760]">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 border border-slate-200">
 
             <div class="mb-6">
-                <h2 class="text-white text-xl font-bold">Selamat Datang</h2>
-                <p class="text-[#b8c9e2] text-sm mt-1">Silakan masuk ke akun Anda</p>
+                <h2 class="text-slate-900 text-2xl font-bold">Selamat Datang</h2>
+                <p class="text-slate-500 text-sm mt-1">Silakan masuk ke akun Anda</p>
             </div>
 
             @if ($errors->any())
@@ -66,7 +66,7 @@
                 @csrf
 
                 <div class="mb-4">
-                    <label for="email" class="block text-sm font-medium text-[#d7e3f5] mb-1.5">Email</label>
+                    <label for="email" class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor"
@@ -77,15 +77,15 @@
                         </div>
                         <input type="email" id="email" name="email" value="{{ old('email') }}"
                             placeholder="nama@yayasan.ac.id" autocomplete="email"
-                            class="w-full pl-10 pr-4 py-2.5 text-sm border @error('email') border-red-300 bg-red-50 @else border-[#294673] bg-white @enderror rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300/35 focus:border-amber-300 transition-colors text-[#162040] placeholder-gray-400">
+                            class="w-full pl-10 pr-4 py-2.5 text-sm border @error('email') border-red-300 bg-red-50 @else border-slate-300 bg-white @enderror rounded-lg focus:outline-none focus:ring-2 focus:ring-[#162040]/20 focus:border-[#162040] transition-colors text-slate-900 placeholder-slate-400">
                     </div>
                     @error('email')
-                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div class="mb-5">
-                    <label for="password" class="block text-sm font-medium text-[#d7e3f5] mb-1.5">Password</label>
+                    <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor"
@@ -96,9 +96,9 @@
                         </div>
                         <input type="password" id="password" name="password" placeholder="••••••••"
                             autocomplete="current-password"
-                            class="w-full pl-10 pr-10 py-2.5 text-sm border @error('password') border-red-300 bg-red-50 @else border-[#294673] bg-white @enderror rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-300/35 focus:border-amber-300 transition-colors text-[#162040] placeholder-gray-400">
+                            class="w-full pl-10 pr-10 py-2.5 text-sm border @error('password') border-red-300 bg-red-50 @else border-slate-300 bg-white @enderror rounded-lg focus:outline-none focus:ring-2 focus:ring-[#162040]/20 focus:border-[#162040] transition-colors text-slate-900 placeholder-slate-400">
                         <button type="button" onclick="togglePassword()"
-                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600">
+                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700">
                             <svg id="eye-icon" class="w-4 h-4" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -109,26 +109,26 @@
                         </button>
                     </div>
                     @error('password')
-                        <p class="mt-1 text-xs text-red-300">{{ $message }}</p>
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div class="flex items-center justify-between mb-6">
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" name="remember"
-                            class="w-4 h-4 rounded border-[#406297] bg-[#163055] text-amber-400 focus:ring-amber-300/40 focus:ring-offset-0">
-                        <span class="text-sm text-[#d7e3f5]">Ingat saya</span>
+                            class="w-4 h-4 rounded border-slate-300 bg-white text-[#162040] focus:ring-[#162040]/25 focus:ring-offset-0">
+                        <span class="text-sm text-slate-600">Ingat saya</span>
                     </label>
                 </div>
 
                 <button type="submit"
-                    class="w-full bg-[#f59e0b] hover:bg-[#f2ab2c] text-[#162040] font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-300/55">
+                    class="w-full bg-[#162040] hover:bg-[#1f3760] text-white font-bold py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#162040]/35">
                     Masuk
                 </button>
             </form>
         </div>
 
-        <p class="text-center text-[#6c7f9f] text-xs mt-6">
+        <p class="text-center text-xs mt-6" style="color: #ffffff;">
             © 2026 Yayasan Hang Tuah. Semua hak dilindungi.
         </p>
     </div>
