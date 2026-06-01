@@ -45,19 +45,19 @@ class TeknologiPembelajaran extends Model
     ];
 
     protected $casts = [
-        'memiliki_lab_komputer'    => 'boolean',
-        'memiliki_proyektor'       => 'boolean',
-        'memiliki_internet'        => 'boolean',
-        'memiliki_lms'             => 'boolean',
-        'memiliki_e_perpustakaan'  => 'boolean',
+        'memiliki_lab_komputer' => 'boolean',
+        'memiliki_proyektor' => 'boolean',
+        'memiliki_internet' => 'boolean',
+        'memiliki_lms' => 'boolean',
+        'memiliki_e_perpustakaan' => 'boolean',
         'memiliki_smart_classroom' => 'boolean',
-        'memiliki_tenaga_it'       => 'boolean',
-        'media_sosial'             => 'array',
-        'platform_lms'             => 'array',
-        'platform_pendidikan'      => 'array',
-        'alat_interaktif'          => 'array',
-        'platform_komunikasi'      => 'array',
-        'aplikasi_manajemen'       => 'array',
+        'memiliki_tenaga_it' => 'boolean',
+        'media_sosial' => 'array',
+        'platform_lms' => 'array',
+        'platform_pendidikan' => 'array',
+        'alat_interaktif' => 'array',
+        'platform_komunikasi' => 'array',
+        'aplikasi_manajemen' => 'array',
     ];
 
     public function sekolah(): BelongsTo

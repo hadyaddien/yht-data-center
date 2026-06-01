@@ -37,4 +37,3 @@ class ProvinsiSeeder extends Seeder
         }
     }
 }
-

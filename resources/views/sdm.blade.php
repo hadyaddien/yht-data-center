@@ -55,15 +55,43 @@
                     'SMK' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-700'],
                 ][$jenjang] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-600'];
 
-                // Derived totals from sdm record
-                $totalGuru = $sdm ? $sdm->guru_pns + $sdm->guru_honorer + $sdm->guru_p3k : 0;
-                $guruTetap = $sdm ? $sdm->guru_pns + $sdm->guru_p3k : 0;
-                $guruTidakTetap = $sdm ? $sdm->guru_honorer : 0;
-                $guruSertif = $sdm ? $sdm->guru_bersertifikasi : 0;
-                $totalKary = $sdm ? $sdm->karyawan_pns + $sdm->karyawan_honorer + $sdm->karyawan_p3k : 0;
-                $karyTetap = $sdm ? $sdm->karyawan_pns + $sdm->karyawan_p3k : 0;
-                $karyTidakTetap = $sdm ? $sdm->karyawan_honorer : 0;
+                // Derived totals — gunakan field baru, fallback ke legacy
+                $totalGuru = $sdm ? $sdm->jumlah_guru ?? $sdm->guru_pns + $sdm->guru_honorer + $sdm->guru_p3k : 0;
+                $guruTetap = $sdm ? $sdm->guru_tetap_yayasan ?? $sdm->guru_pns + $sdm->guru_p3k : 0;
+                $guruTidakTetap = $sdm ? $sdm->guru_tidak_tetap ?? $sdm->guru_honorer : 0;
+                $guruSertif = $sdm ? $sdm->guru_sertifikasi ?? $sdm->guru_bersertifikasi : 0;
+                $totalKary = $sdm
+                    ? $sdm->jumlah_karyawan ?? $sdm->karyawan_pns + $sdm->karyawan_honorer + $sdm->karyawan_p3k
+                    : 0;
+                $karyTetap = $sdm ? $sdm->karyawan_tetap ?? $sdm->karyawan_pns + $sdm->karyawan_p3k : 0;
+                $karyTidakTetap = $sdm ? $sdm->karyawan_tidak_tetap ?? $sdm->karyawan_honorer : 0;
                 $jumlahRombel = $sdm ? $sdm->jumlah_rombel : 0;
+
+                // Kualifikasi aggregate dari field baru
+                $kualifikasiAggregate = [];
+                if (
+                    $sdm &&
+                    ($sdm->guru_s3 !== null ||
+                        $sdm->guru_s2 !== null ||
+                        $sdm->guru_s1_pendidikan !== null ||
+                        $sdm->guru_s1_non_pendidikan !== null)
+                ) {
+                    if ($sdm->guru_s3 > 0) {
+                        $kualifikasiAggregate['S3'] = $sdm->guru_s3;
+                    }
+                    if ($sdm->guru_s2 > 0) {
+                        $kualifikasiAggregate['S2'] = $sdm->guru_s2;
+                    }
+                    if ($sdm->guru_s1_pendidikan > 0) {
+                        $kualifikasiAggregate['S1 Pendidikan'] = $sdm->guru_s1_pendidikan;
+                    }
+                    if ($sdm->guru_s1_non_pendidikan > 0) {
+                        $kualifikasiAggregate['S1 Non-Pend.'] = $sdm->guru_s1_non_pendidikan;
+                    }
+                }
+
+                // Kualifikasi dari sdmGuru (fallback jika aggregate belum diisi)
+                $kualifikasi = $guru->groupBy('kualifikasi')->map->count();
 
                 $muridTotal = $sdm ? $sdm->jumlah_murid_total : 0;
                 $muridLaki = $sdm ? $sdm->jumlah_murid_laki : 0;
@@ -175,10 +203,18 @@
                         {{-- Kualifikasi Guru --}}
                         <div>
                             <p class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">
-                                Kualifikasi Guru</p>
-                            @if ($kualifikasi->isEmpty())
-                                <p class="text-sm text-gray-300">-</p>
-                            @else
+                                Kualifikasi Pendidikan Guru</p>
+                            @if (!empty($kualifikasiAggregate))
+                                <div class="space-y-2">
+                                    @foreach ($kualifikasiAggregate as $level => $jumlah)
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm text-blue-500">{{ $level }}</span>
+                                            <span class="text-sm font-medium text-gray-700">{{ $jumlah }}
+                                                orang</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @elseif ($kualifikasi->isNotEmpty())
                                 <div class="space-y-2">
                                     @foreach (['S3', 'S2', 'S1', 'D3', 'SMA'] as $level)
                                         @if (isset($kualifikasi[$level]))
@@ -191,6 +227,8 @@
                                         @endif
                                     @endforeach
                                 </div>
+                            @else
+                                <p class="text-sm text-gray-300">Belum ada data</p>
                             @endif
                         </div>
 
@@ -200,13 +238,37 @@
                                 Penghasilan &amp; Jabatan</p>
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-500">S1 ke atas</span>
+                                    <span class="text-sm text-gray-500">Rata-rata Gaji Guru</span>
                                     <span class="text-sm font-medium text-gray-700">
-                                        {{ $sdm?->guru_s1_keatas ?? '-' }} orang
+                                        @if ($sdm?->rata_gaji_guru)
+                                            Rp {{ number_format($sdm->rata_gaji_guru, 0, ',', '.') }}
+                                        @else
+                                            -
+                                        @endif
                                     </span>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-500">Kepala Sekolah</span>
+                                    <span class="text-sm text-gray-500">Rata-rata Gaji Karyawan</span>
+                                    <span class="text-sm font-medium text-gray-700">
+                                        @if ($sdm?->rata_gaji_karyawan)
+                                            Rp {{ number_format($sdm->rata_gaji_karyawan, 0, ',', '.') }}
+                                        @else
+                                            -
+                                        @endif
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-500">Masa Jabatan Kepsek</span>
+                                    <span class="text-sm font-medium text-gray-700">
+                                        @if ($sdm?->masa_jabatan_kepsek)
+                                            {{ $sdm->masa_jabatan_kepsek }} tahun
+                                        @else
+                                            -
+                                        @endif
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+                                    <span class="text-sm text-gray-500">Nama Kepala Sekolah</span>
                                     <span class="text-sm font-medium text-gray-700">
                                         {{ $sekolah->kepala_sekolah_nama ?? '-' }}
                                     </span>
@@ -273,10 +335,11 @@
                     </div>
 
                     {{-- Hambatan & Catatan --}}
-                    @if ($sdm?->catatan_hambatan)
+                    @php $hambatan = $sdm?->hambatan_tantangan ?? $sdm?->catatan_hambatan; @endphp
+                    @if ($hambatan)
                         <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
                             <p class="text-xs font-semibold text-amber-600 mb-1">Hambatan &amp; Catatan</p>
-                            <p class="text-sm text-amber-800">{{ $sdm->catatan_hambatan }}</p>
+                            <p class="text-sm text-amber-800">{{ $hambatan }}</p>
                         </div>
                     @endif
 

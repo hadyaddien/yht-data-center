@@ -13,7 +13,7 @@ class UserController extends Controller
 {
     private function currentUser(): User
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         return $user;
@@ -86,7 +86,7 @@ class UserController extends Controller
                 $query->whereRaw('1 = 0');
             } else {
                 $query->where('role', 'kepala_sekolah')
-                    ->whereHas('sekolah', fn($q) => $q->where('provinsi_id', $actor->provinsi_id));
+                    ->whereHas('sekolah', fn ($q) => $q->where('provinsi_id', $actor->provinsi_id));
             }
         }
 
@@ -116,7 +116,7 @@ class UserController extends Controller
         $this->checkSuperAdmin();
 
         $provinsiList = Provinsi::orderBy('name')->get();
-        $sekolahList  = Sekolah::orderBy('nama')->get();
+        $sekolahList = Sekolah::orderBy('nama')->get();
 
         return view('users.create', compact('provinsiList', 'sekolahList'));
     }
@@ -127,23 +127,23 @@ class UserController extends Controller
         $this->checkSuperAdmin();
 
         $validated = $request->validate([
-            'name'                  => ['required', 'string', 'max:255'],
-            'email'                 => ['required', 'email', 'unique:users,email'],
-            'password'              => ['required', 'string', 'min:8', 'confirmed'],
-            'role'                  => ['required', 'in:superadmin,admin_wilayah,kepala_sekolah'],
-            'provinsi_id'           => ['nullable', 'exists:indonesia_provinces,id', 'required_if:role,admin_wilayah'],
-            'sekolah_id'            => ['nullable', 'exists:sekolah,id', 'required_if:role,kepala_sekolah'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'role' => ['required', 'in:superadmin,admin_wilayah,kepala_sekolah'],
+            'provinsi_id' => ['nullable', 'exists:indonesia_provinces,id', 'required_if:role,admin_wilayah'],
+            'sekolah_id' => ['nullable', 'exists:sekolah,id', 'required_if:role,kepala_sekolah'],
         ], [
-            'name.required'         => 'Nama wajib diisi.',
-            'email.required'        => 'Email wajib diisi.',
-            'email.email'           => 'Format email tidak valid.',
-            'email.unique'          => 'Email sudah terdaftar.',
-            'password.required'     => 'Password wajib diisi.',
-            'password.min'          => 'Password minimal 8 karakter.',
-            'password.confirmed'    => 'Konfirmasi password tidak cocok.',
-            'role.required'         => 'Role wajib dipilih.',
+            'name.required' => 'Nama wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah terdaftar.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'role.required' => 'Role wajib dipilih.',
             'provinsi_id.required_if' => 'Provinsi wajib dipilih untuk Admin Wilayah.',
-            'sekolah_id.required_if'  => 'Sekolah wajib dipilih untuk Kepala Sekolah.',
+            'sekolah_id.required_if' => 'Sekolah wajib dipilih untuk Kepala Sekolah.',
         ]);
 
         if ($validated['role'] === 'superadmin') {
@@ -176,7 +176,7 @@ class UserController extends Controller
             ? Provinsi::orderBy('name')->get()
             : collect();
 
-        $sekolahList  = $actor->isSuperAdmin()
+        $sekolahList = $actor->isSuperAdmin()
             ? Sekolah::orderBy('nama')->get()
             : Sekolah::where('provinsi_id', $actor->provinsi_id)->orderBy('nama')->get();
 
@@ -192,22 +192,22 @@ class UserController extends Controller
 
         if ($actor->isSuperAdmin()) {
             $validated = $request->validate([
-                'name'                  => ['required', 'string', 'max:255'],
-                'email'                 => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-                'password'              => ['nullable', 'string', 'min:8', 'confirmed'],
-                'role'                  => ['required', 'in:superadmin,admin_wilayah,kepala_sekolah'],
-                'provinsi_id'           => ['nullable', 'exists:indonesia_provinces,id', 'required_if:role,admin_wilayah'],
-                'sekolah_id'            => ['nullable', 'exists:sekolah,id', 'required_if:role,kepala_sekolah'],
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+                'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+                'role' => ['required', 'in:superadmin,admin_wilayah,kepala_sekolah'],
+                'provinsi_id' => ['nullable', 'exists:indonesia_provinces,id', 'required_if:role,admin_wilayah'],
+                'sekolah_id' => ['nullable', 'exists:sekolah,id', 'required_if:role,kepala_sekolah'],
             ], [
-                'name.required'         => 'Nama wajib diisi.',
-                'email.required'        => 'Email wajib diisi.',
-                'email.email'           => 'Format email tidak valid.',
-                'email.unique'          => 'Email sudah digunakan akun lain.',
-                'password.min'          => 'Password minimal 8 karakter.',
-                'password.confirmed'    => 'Konfirmasi password tidak cocok.',
-                'role.required'         => 'Role wajib dipilih.',
+                'name.required' => 'Nama wajib diisi.',
+                'email.required' => 'Email wajib diisi.',
+                'email.email' => 'Format email tidak valid.',
+                'email.unique' => 'Email sudah digunakan akun lain.',
+                'password.min' => 'Password minimal 8 karakter.',
+                'password.confirmed' => 'Konfirmasi password tidak cocok.',
+                'role.required' => 'Role wajib dipilih.',
                 'provinsi_id.required_if' => 'Provinsi wajib dipilih untuk Admin Wilayah.',
-                'sekolah_id.required_if'  => 'Sekolah wajib dipilih untuk Kepala Sekolah.',
+                'sekolah_id.required_if' => 'Sekolah wajib dipilih untuk Kepala Sekolah.',
             ]);
 
             if ($validated['role'] === 'superadmin') {
@@ -224,19 +224,19 @@ class UserController extends Controller
             }
         } else {
             $validated = $request->validate([
-                'name'       => ['required', 'string', 'max:255'],
-                'email'      => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-                'password'   => ['nullable', 'string', 'min:8', 'confirmed'],
-                'role'       => ['required', 'in:kepala_sekolah'],
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+                'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+                'role' => ['required', 'in:kepala_sekolah'],
                 'sekolah_id' => ['required', 'exists:sekolah,id'],
             ], [
-                'name.required'       => 'Nama wajib diisi.',
-                'email.required'      => 'Email wajib diisi.',
-                'email.email'         => 'Format email tidak valid.',
-                'email.unique'        => 'Email sudah digunakan akun lain.',
-                'password.min'        => 'Password minimal 8 karakter.',
-                'password.confirmed'  => 'Konfirmasi password tidak cocok.',
-                'role.in'             => 'Admin Wilayah hanya dapat mengelola role Kepala Sekolah.',
+                'name.required' => 'Nama wajib diisi.',
+                'email.required' => 'Email wajib diisi.',
+                'email.email' => 'Format email tidak valid.',
+                'email.unique' => 'Email sudah digunakan akun lain.',
+                'password.min' => 'Password minimal 8 karakter.',
+                'password.confirmed' => 'Konfirmasi password tidak cocok.',
+                'role.in' => 'Admin Wilayah hanya dapat mengelola role Kepala Sekolah.',
                 'sekolah_id.required' => 'Sekolah wajib dipilih untuk Kepala Sekolah.',
             ]);
 

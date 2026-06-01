@@ -19,8 +19,8 @@ class SdmRombel extends Model
     ];
 
     protected $casts = [
-        'siswa_laki'       => 'integer',
-        'siswa_perempuan'  => 'integer',
+        'siswa_laki' => 'integer',
+        'siswa_perempuan' => 'integer',
     ];
 
     public function getTotalSiswaAttribute(): int

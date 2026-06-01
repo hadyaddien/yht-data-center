@@ -6,15 +6,16 @@ use App\Models\ProgramPendidikan;
 use App\Models\Sdm;
 use App\Models\Sekolah;
 use App\Models\TeknologiPembelajaran;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class RekapController extends Controller
 {
     public function index()
     {
-        $tahun        = '2024/2025';
+        $tahun = '2024/2025';
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         abort_if($user->isKepalaSekolah(), 403, 'Anda tidak memiliki akses ke halaman Rekap & Analisis.');
@@ -29,8 +30,8 @@ class RekapController extends Controller
         $sdmAgg = Sdm::where('tahun_ajaran', $tahun)
             ->whereIn('sekolah_id', $schoolIds)
             ->selectRaw('
-                SUM(COALESCE(guru_pns, 0) + COALESCE(guru_honorer, 0) + COALESCE(guru_p3k, 0)) as agg_guru_total,
-                SUM(COALESCE(karyawan_pns, 0) + COALESCE(karyawan_honorer, 0) + COALESCE(karyawan_p3k, 0)) as agg_karyawan_total,
+                SUM(COALESCE(jumlah_guru, COALESCE(guru_pns, 0) + COALESCE(guru_honorer, 0) + COALESCE(guru_p3k, 0))) as agg_guru_total,
+                SUM(COALESCE(jumlah_karyawan, COALESCE(karyawan_pns, 0) + COALESCE(karyawan_honorer, 0) + COALESCE(karyawan_p3k, 0))) as agg_karyawan_total,
                 SUM(COALESCE(jumlah_rombel, 0)) as total_rombel,
                 SUM(COALESCE(jumlah_murid_total, 0)) as total_murid,
                 SUM(COALESCE(jumlah_murid_laki, 0)) as total_murid_laki,
@@ -47,14 +48,14 @@ class RekapController extends Controller
             ')->first();
 
         $stats = [
-            'total_sekolah'  => $totalSekolah,
-            'total_guru'     => (int) ($sdmAgg->agg_guru_total ?? 0),
+            'total_sekolah' => $totalSekolah,
+            'total_guru' => (int) ($sdmAgg->agg_guru_total ?? 0),
             'total_karyawan' => (int) ($sdmAgg->agg_karyawan_total ?? 0),
-            'total_rombel'   => (int) ($sdmAgg->total_rombel ?? 0),
-            'total_murid'    => (int) ($sdmAgg->total_murid ?? 0),
+            'total_rombel' => (int) ($sdmAgg->total_rombel ?? 0),
+            'total_murid' => (int) ($sdmAgg->total_murid ?? 0),
             'total_murid_laki' => (int) ($sdmAgg->total_murid_laki ?? 0),
             'total_murid_perempuan' => (int) ($sdmAgg->total_murid_perempuan ?? 0),
-            'terakreditasi'  => $terakreditasi . '/' . $totalSekolah,
+            'terakreditasi' => $terakreditasi.'/'.$totalSekolah,
         ];
 
         $jenjangLabels = ['TK', 'SD', 'SMP', 'SMA', 'SMK'];
@@ -66,7 +67,7 @@ class RekapController extends Controller
         $guruPerJenjang = Sdm::where('tahun_ajaran', $tahun)
             ->whereIn('sdm.sekolah_id', $schoolIds)
             ->join('sekolah', 'sdm.sekolah_id', '=', 'sekolah.id')
-            ->select('sekolah.jenjang', DB::raw('SUM(COALESCE(guru_pns, 0) + COALESCE(guru_honorer, 0) + COALESCE(guru_p3k, 0)) as total_guru'))
+            ->select('sekolah.jenjang', DB::raw('SUM(COALESCE(jumlah_guru, COALESCE(guru_pns, 0) + COALESCE(guru_honorer, 0) + COALESCE(guru_p3k, 0))) as total_guru'))
             ->groupBy('sekolah.jenjang')
             ->pluck('total_guru', 'jenjang');
 
@@ -78,10 +79,10 @@ class RekapController extends Controller
             ->pluck('total_murid', 'jenjang');
 
         $jenjangChartData = [
-            'labels'  => $jenjangLabels,
-            'sekolah' => array_map(fn($j) => (int) ($jenjangSekolah[$j] ?? 0), $jenjangLabels),
-            'guru'    => array_map(fn($j) => (int) ($guruPerJenjang[$j] ?? 0), $jenjangLabels),
-            'murid'   => array_map(fn($j) => (int) ($muridPerJenjang[$j] ?? 0), $jenjangLabels),
+            'labels' => $jenjangLabels,
+            'sekolah' => array_map(fn ($j) => (int) ($jenjangSekolah[$j] ?? 0), $jenjangLabels),
+            'guru' => array_map(fn ($j) => (int) ($guruPerJenjang[$j] ?? 0), $jenjangLabels),
+            'murid' => array_map(fn ($j) => (int) ($muridPerJenjang[$j] ?? 0), $jenjangLabels),
         ];
 
         $totalMurid = (int) ($sdmAgg->total_murid ?? 0);
@@ -112,6 +113,7 @@ class RekapController extends Controller
         $komposisiOrtu = collect($komposisiOrtuRaw)
             ->map(function ($count, $label) use ($totalMurid, $ortuColorMap) {
                 $persen = $totalMurid > 0 ? round(($count / $totalMurid) * 100, 1) : 0;
+
                 return [
                     'label' => $label,
                     'count' => $count,
@@ -138,9 +140,9 @@ class RekapController extends Controller
             foreach ($adopsiData as $item) {
                 $persen = round($item['count'] / $totalTeknologi * 100);
                 $teknologiAdopsi[] = [
-                    'label'  => $item['label'],
+                    'label' => $item['label'],
                     'persen' => $persen,
-                    'color'  => $persen >= 60 ? 'bg-green-400' : ($persen >= 40 ? 'bg-amber-400' : 'bg-rose-400'),
+                    'color' => $persen >= 60 ? 'bg-green-400' : ($persen >= 40 ? 'bg-amber-400' : 'bg-rose-400'),
                 ];
             }
         }
@@ -166,46 +168,47 @@ class RekapController extends Controller
             return (float) preg_replace('/[^0-9.]/', '', (string) $value);
         };
 
-        $ringkasanSekolah = $sekolahList->map(function ($s) use ($sdmMap, $progMap, $parseFunding) {
-            $sdm  = $sdmMap->get($s->id);
+        $ringkasanSekolah = $sekolahList->map(function ($s) use ($sdmMap, $progMap) {
+            $sdm = $sdmMap->get($s->id);
             $prog = $progMap->get($s->id);
+
             return [
-                'id'         => $s->id,
-                'jenjang'    => $s->jenjang,
+                'id' => $s->id,
+                'jenjang' => $s->jenjang,
                 'akreditasi' => $s->akreditasi_label,
-                'name'       => $s->nama,
-                'kota'       => $s->kota?->nama ?? '',
-                'lokasi'     => ($s->kota?->nama ?? '') . ', ' . ($s->provinsi?->nama ?? ''),
-                'provinsi'   => $s->provinsi?->nama ?? '',
-                'kepsek'     => $s->kepala_sekolah_nama,
-                'npsn'       => $s->npsn,
+                'name' => $s->nama,
+                'kota' => $s->kota?->nama ?? '',
+                'lokasi' => ($s->kota?->nama ?? '').', '.($s->provinsi?->nama ?? ''),
+                'provinsi' => $s->provinsi?->nama ?? '',
+                'kepsek' => $s->kepala_sekolah_nama,
+                'npsn' => $s->npsn,
                 'luas_tanah' => $s->luas_tanah ? (float) $s->luas_tanah : 0,
-                'guru'       => $sdm ? ($sdm->guru_pns + $sdm->guru_honorer + $sdm->guru_p3k) : 0,
-                'guru_tetap' => $sdm ? ($sdm->guru_pns + $sdm->guru_p3k) : 0,
-                'guru_sertifikasi' => (int) ($sdm?->guru_bersertifikasi ?? 0),
-                'karyawan'   => $sdm ? ($sdm->karyawan_pns + $sdm->karyawan_honorer + $sdm->karyawan_p3k) : 0,
-                'rombel'     => $sdm?->jumlah_rombel ?? 0,
+                'guru' => $sdm ? ($sdm->jumlah_guru ?? ($sdm->guru_pns + $sdm->guru_honorer + $sdm->guru_p3k)) : 0,
+                'guru_tetap' => $sdm ? ($sdm->guru_tetap_yayasan ?? ($sdm->guru_pns + $sdm->guru_p3k)) : 0,
+                'guru_sertifikasi' => (int) ($sdm?->guru_sertifikasi ?? $sdm?->guru_bersertifikasi ?? 0),
+                'karyawan' => $sdm ? ($sdm->jumlah_karyawan ?? ($sdm->karyawan_pns + $sdm->karyawan_honorer + $sdm->karyawan_p3k)) : 0,
+                'rombel' => $sdm?->jumlah_rombel ?? 0,
                 'murid_total' => $sdm?->jumlah_murid_total ?? 0,
                 'murid_laki' => $sdm?->jumlah_murid_laki ?? 0,
                 'murid_perempuan' => $sdm?->jumlah_murid_perempuan ?? 0,
-                'penerimaan_bos' => $parseFunding($prog?->penerimaan_bos),
-                'penerimaan_bop' => $parseFunding($prog?->penerimaan_bop),
-                'rapor'      => [
-                    'literasi'            => $s->rapor_literasi ? (float) $s->rapor_literasi : null,
-                    'numerasi'            => $s->rapor_numerasi ? (float) $s->rapor_numerasi : null,
-                    'karakter'            => $s->rapor_karakter ? (float) $s->rapor_karakter : null,
-                    'kualitas_pbm'        => $prog?->pbd_kualitas_pembelajaran ? (float) $prog->pbd_kualitas_pembelajaran : null,
-                    'iklim_keamanan'      => $prog?->pbd_iklim_keamanan        ? (float) $prog->pbd_iklim_keamanan        : null,
-                    'iklim_kebhinekaan'   => $prog?->pbd_iklim_kebhinekaan     ? (float) $prog->pbd_iklim_kebhinekaan     : null,
+                'penerimaan_bos' => $prog?->penerimaan_bos === 'Menerima' ? 1 : 0,
+                'penerimaan_bop' => $prog?->penerimaan_bop === 'Menerima' ? 1 : 0,
+                'rapor' => [
+                    'literasi' => $s->rapor_literasi ? (float) $s->rapor_literasi : null,
+                    'numerasi' => $s->rapor_numerasi ? (float) $s->rapor_numerasi : null,
+                    'karakter' => $s->rapor_karakter ? (float) $s->rapor_karakter : null,
+                    'kualitas_pbm' => $prog?->pbd_kualitas_pembelajaran ? (float) $prog->pbd_kualitas_pembelajaran : null,
+                    'iklim_keamanan' => $prog?->pbd_iklim_keamanan ? (float) $prog->pbd_iklim_keamanan : null,
+                    'iklim_kebhinekaan' => $prog?->pbd_iklim_kebhinekaan ? (float) $prog->pbd_iklim_kebhinekaan : null,
                 ],
             ];
         })->toArray();
 
         // Compute average rapor scores for radar chart (6 axes)
         $radarKeys = ['literasi', 'numerasi', 'karakter', 'kualitas_pbm', 'iklim_keamanan', 'iklim_kebhinekaan'];
-        $raporAvg  = [];
+        $raporAvg = [];
         foreach ($radarKeys as $key) {
-            $vals = array_filter(array_column(array_column($ringkasanSekolah, 'rapor'), $key), fn($v) => $v !== null);
+            $vals = array_filter(array_column(array_column($ringkasanSekolah, 'rapor'), $key), fn ($v) => $v !== null);
             $raporAvg[$key] = count($vals) ? round(array_sum($vals) / count($vals), 1) : 0;
         }
 

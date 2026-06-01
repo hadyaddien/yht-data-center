@@ -15,12 +15,12 @@ class KotaKabupatenSeeder extends Seeder
         KotaKabupaten::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
-        $jakartaId       = Provinsi::where('kode', '31')->value('id');
-        $jawatimurId     = Provinsi::where('kode', '35')->value('id');
-        $sulselId        = Provinsi::where('kode', '73')->value('id');
-        $sulutId         = Provinsi::where('kode', '71')->value('id');
-        $jawatengahId    = Provinsi::where('kode', '33')->value('id');
-        $jawaBarat       = Provinsi::where('kode', '32')->value('id');
+        $jakartaId = Provinsi::where('kode', '31')->value('id');
+        $jawatimurId = Provinsi::where('kode', '35')->value('id');
+        $sulselId = Provinsi::where('kode', '73')->value('id');
+        $sulutId = Provinsi::where('kode', '71')->value('id');
+        $jawatengahId = Provinsi::where('kode', '33')->value('id');
+        $jawaBarat = Provinsi::where('kode', '32')->value('id');
 
         $data = [
             // DKI Jakarta
@@ -49,4 +49,3 @@ class KotaKabupatenSeeder extends Seeder
         }
     }
 }
-

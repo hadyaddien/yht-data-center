@@ -27,12 +27,12 @@ return new class extends Migration
             $table->decimal('nilai_ujian_ta2', 5, 2)->nullable()->after('nilai_ujian_ta1');
 
             // Rapor Pendidikan (Skor PBD)
-            $table->decimal('pbd_literasi',              5, 2)->nullable()->after('nilai_ujian_ta2');
-            $table->decimal('pbd_numerasi',              5, 2)->nullable()->after('pbd_literasi');
-            $table->decimal('pbd_karakter',              5, 2)->nullable()->after('pbd_numerasi');
+            $table->decimal('pbd_literasi', 5, 2)->nullable()->after('nilai_ujian_ta2');
+            $table->decimal('pbd_numerasi', 5, 2)->nullable()->after('pbd_literasi');
+            $table->decimal('pbd_karakter', 5, 2)->nullable()->after('pbd_numerasi');
             $table->decimal('pbd_kualitas_pembelajaran', 5, 2)->nullable()->after('pbd_karakter');
-            $table->decimal('pbd_iklim_keamanan',        5, 2)->nullable()->after('pbd_kualitas_pembelajaran');
-            $table->decimal('pbd_iklim_kebhinekaan',     5, 2)->nullable()->after('pbd_iklim_keamanan');
+            $table->decimal('pbd_iklim_keamanan', 5, 2)->nullable()->after('pbd_kualitas_pembelajaran');
+            $table->decimal('pbd_iklim_kebhinekaan', 5, 2)->nullable()->after('pbd_iklim_keamanan');
 
             // Prestasi Akademik
             $table->unsignedSmallInteger('prestasi_akad_2025_kota')->nullable()->after('pbd_iklim_kebhinekaan');

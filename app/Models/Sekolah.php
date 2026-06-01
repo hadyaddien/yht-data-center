@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Sekolah extends Model
 {
@@ -39,6 +38,7 @@ class Sekolah extends Model
         'logo',
         'kekuatan',
         'kelemahan',
+        'koordinat_gps',
         'status_operasional',
         'rapor_literasi',
         'rapor_numerasi',
@@ -47,11 +47,11 @@ class Sekolah extends Model
 
     protected $casts = [
         'akreditasi_nilai' => 'integer',
-        'tahun_berdiri'    => 'integer',
-        'luas_tanah'       => 'decimal:2',
-        'rapor_literasi'   => 'decimal:2',
-        'rapor_numerasi'   => 'decimal:2',
-        'rapor_karakter'   => 'decimal:2',
+        'tahun_berdiri' => 'integer',
+        'luas_tanah' => 'decimal:2',
+        'rapor_literasi' => 'decimal:2',
+        'rapor_numerasi' => 'decimal:2',
+        'rapor_karakter' => 'decimal:2',
     ];
 
     public function kota(): BelongsTo
@@ -109,6 +109,7 @@ class Sekolah extends Model
         if (! $this->akreditasi_nilai) {
             return null;
         }
-        return $this->akreditasi_nilai . ' (' . $this->akreditasi_predikat . ')';
+
+        return $this->akreditasi_nilai.' ('.$this->akreditasi_predikat.')';
     }
 }

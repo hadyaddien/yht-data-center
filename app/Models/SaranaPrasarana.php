@@ -138,10 +138,10 @@ class SaranaPrasarana extends Model
         'biaya_sewa_lahan' => 'integer',
         'memiliki_perpustakaan' => 'boolean',
         'memiliki_laboratorium' => 'boolean',
-        'memiliki_uks'          => 'boolean',
-        'memiliki_lapangan'     => 'boolean',
-        'skor_rata_rata'        => 'decimal:2',
-        'luas_bangunan_m2'      => 'decimal:2',
+        'memiliki_uks' => 'boolean',
+        'memiliki_lapangan' => 'boolean',
+        'skor_rata_rata' => 'decimal:2',
+        'luas_bangunan_m2' => 'decimal:2',
     ];
 
     public function sekolah(): BelongsTo

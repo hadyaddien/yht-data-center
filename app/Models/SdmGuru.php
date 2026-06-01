@@ -26,7 +26,7 @@ class SdmGuru extends Model
     ];
 
     protected $casts = [
-        'sertifikasi'   => 'boolean',
+        'sertifikasi' => 'boolean',
         'tanggal_lahir' => 'date',
     ];
 

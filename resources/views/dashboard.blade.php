@@ -3,11 +3,18 @@
 @section('title', 'Dashboard')
 
 @section('content')
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-[#162040]">Dashboard</h1>
-        <p class="text-sm text-gray-500 mt-1">
-            Ringkasan data satuan pendidikan Yayasan <span class="text-[#162040] font-semibold">Hang Tuah</span> se-Indonesia
-        </p>
+    <div class="bg-white rounded-xl p-4 md:p-5 shadow-sm border border-gray-100 mb-4">
+        <div class="flex items-center gap-4">
+            <img src="{{ asset('images/logo-yht.png') }}" alt="Logo Yayasan Hang Tuah"
+                class="w-14 h-14 md:w-16 md:h-16 rounded-full object-cover ring-1 ring-gray-200">
+
+            <div class="min-w-0">
+                <h1 class="text-2xl md:text-[34px] font-bold text-[#162040] leading-tight">Yayasan Hang Tuah</h1>
+                <p class="text-sm md:text-[28px] text-gray-500 leading-tight mt-1">
+                    Dashboard Instrumen Pendataan Satuan Pendidikan {{ date('Y') }}
+                </p>
+            </div>
+        </div>
     </div>
 
     {{-- Stats Cards --}}
@@ -90,6 +97,80 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
+            </div>
+        </div>
+    </div>
+
+    
+    {{-- Top Cards: Jenjang, Wilayah, Akreditasi --}}
+    <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+            <div class="flex items-center gap-2 mb-4">
+                <svg class="w-4 h-4 text-[#162040]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 14l9-5-9-5-9 5 9 5z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                        d="M12 14l6.16-3.422A12.083 12.083 0 0120 17.5c0 1.328-3.582 2.5-8 2.5s-8-1.172-8-2.5a12.083 12.083 0 011.84-6.922L12 14z" />
+                </svg>
+                <h2 class="text-sm font-semibold text-[#162040]">Jumlah Sekolah per Jenjang</h2>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                @foreach ($jenjangCards as $item)
+                    <div class="rounded-xl border border-gray-100 bg-gray-50/70 px-3 py-4 text-center">
+                        <p class="text-4xl font-bold leading-none text-[#162040]">{{ $item['count'] }}</p>
+                        <span
+                            class="mt-3 inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-bold {{ $item['badge'] }}">
+                            {{ $item['label'] }}
+                        </span>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+            <div class="flex items-center gap-2 mb-4">
+                <svg class="w-4 h-4 text-[#162040]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <h2 class="text-sm font-semibold text-[#162040]">Jumlah Sekolah per Wilayah</h2>
+            </div>
+
+            <div class="space-y-3">
+                @forelse ($wilayahSummary as $item)
+                    <div>
+                        <div class="flex items-center justify-between text-sm mb-1">
+                            <span class="text-gray-600 truncate pr-3">{{ $item['label'] }}</span>
+                            <span class="font-semibold text-[#162040]">{{ $item['count'] }}</span>
+                        </div>
+                        <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
+                            <div class="h-full bg-[#162040]" style="width: {{ min(100, $item['percent']) }}%"></div>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-gray-400">Belum ada data wilayah.</p>
+                @endforelse
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+            <h2 class="text-sm font-semibold text-[#162040] mb-4">Status Akreditasi</h2>
+            <div class="space-y-3">
+                @forelse ($akreditasiSummary as $item)
+                    <div>
+                        <div class="flex items-center justify-between text-sm mb-1">
+                            <span class="text-gray-600">{{ $item['label'] }}</span>
+                            <span class="font-semibold text-[#162040]">{{ $item['count'] }}</span>
+                        </div>
+                        <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
+                            <div class="h-full bg-[#f5b301]" style="width: {{ min(100, $item['percent']) }}%"></div>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-gray-400">Belum ada data akreditasi.</p>
+                @endforelse
             </div>
         </div>
     </div>

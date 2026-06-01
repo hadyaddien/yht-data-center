@@ -22,11 +22,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('sekolah', function (Blueprint $table) {
-            if (!Schema::hasColumn('sekolah', 'nss')) {
+            if (! Schema::hasColumn('sekolah', 'nss')) {
                 $table->string('nss', 20)->nullable()->after('npsn');
             }
 
-            if (!Schema::hasColumn('sekolah', 'status')) {
+            if (! Schema::hasColumn('sekolah', 'status')) {
                 $table->enum('status', ['negeri', 'swasta'])->nullable()->after('jenjang');
             }
         });

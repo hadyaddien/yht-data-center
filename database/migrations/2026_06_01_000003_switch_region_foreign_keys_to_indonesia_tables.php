@@ -95,39 +95,39 @@ return new class extends Migration
 
         // Remap FK sekolah/user lama (id lokal) -> id tabel Laravolt berdasarkan kode wilayah.
         DB::statement(
-            "UPDATE sekolah s
+            'UPDATE sekolah s
              JOIN provinsi p ON p.id = s.provinsi_id
              JOIN indonesia_provinces ip ON ip.code = p.kode
-             SET s.provinsi_id = ip.id"
+             SET s.provinsi_id = ip.id'
         );
 
         DB::statement(
-            "UPDATE sekolah s
+            'UPDATE sekolah s
              JOIN kota_kabupaten k ON k.id = s.kota_id
              JOIN indonesia_cities ic ON ic.code = k.kode
-             SET s.kota_id = ic.id"
+             SET s.kota_id = ic.id'
         );
 
         DB::statement(
-            "UPDATE users u
+            'UPDATE users u
              JOIN provinsi p ON p.id = u.provinsi_id
              JOIN indonesia_provinces ip ON ip.code = p.kode
-             SET u.provinsi_id = ip.id"
+             SET u.provinsi_id = ip.id'
         );
 
         // Kolom nullable dibersihkan agar tidak menabrak FK baru.
         DB::statement(
-            "UPDATE sekolah s
+            'UPDATE sekolah s
              LEFT JOIN indonesia_cities ic ON ic.id = s.kota_id
              SET s.kota_id = NULL
-             WHERE s.kota_id IS NOT NULL AND ic.id IS NULL"
+             WHERE s.kota_id IS NOT NULL AND ic.id IS NULL'
         );
 
         DB::statement(
-            "UPDATE users u
+            'UPDATE users u
              LEFT JOIN indonesia_provinces ip ON ip.id = u.provinsi_id
              SET u.provinsi_id = NULL
-             WHERE u.provinsi_id IS NOT NULL AND ip.id IS NULL"
+             WHERE u.provinsi_id IS NOT NULL AND ip.id IS NULL'
         );
 
         $orphanProvinsiInSekolah = DB::table('sekolah as s')
@@ -136,9 +136,9 @@ return new class extends Migration
             ->exists();
 
         if ($orphanProvinsiInSekolah) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Terdapat data sekolah dengan provinsi_id yang tidak dapat dipetakan ke indonesia_provinces. '
-                    . 'Perbaiki data wilayah sekolah terlebih dahulu sebelum menjalankan migrasi ini.'
+                    .'Perbaiki data wilayah sekolah terlebih dahulu sebelum menjalankan migrasi ini.'
             );
         }
     }

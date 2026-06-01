@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SaranaPrasarana;
 use App\Models\Sdm;
 use App\Models\Sekolah;
-use App\Models\SaranaPrasarana;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -13,7 +14,7 @@ class DashboardController extends Controller
     {
         $tahun = '2024/2025';
 
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $baseSekolahQuery = $user->applySekolahScope(Sekolah::query())
@@ -40,24 +41,24 @@ class DashboardController extends Controller
             ')
             ->first();
 
-        $totalSekolah  = (clone $baseSekolahQuery)->count();
-        $totalGuru     = (int) ($sdmAgg->agg_total_guru ?? 0);
-        $totalMurid    = (int) ($sdmAgg->total_murid ?? 0);
-        $totalMuridL   = (int) ($sdmAgg->total_murid_laki ?? 0);
-        $totalMuridP   = (int) ($sdmAgg->total_murid_perempuan ?? 0);
+        $totalSekolah = (clone $baseSekolahQuery)->count();
+        $totalGuru = (int) ($sdmAgg->agg_total_guru ?? 0);
+        $totalMurid = (int) ($sdmAgg->total_murid ?? 0);
+        $totalMuridL = (int) ($sdmAgg->total_murid_laki ?? 0);
+        $totalMuridP = (int) ($sdmAgg->total_murid_perempuan ?? 0);
         $terakreditasi = (clone $baseSekolahQuery)->whereNotNull('akreditasi_nilai')->count();
-        $rataSarpras   = SaranaPrasarana::where('tahun_ajaran', $tahun)
+        $rataSarpras = SaranaPrasarana::where('tahun_ajaran', $tahun)
             ->whereIn('sekolah_id', $schoolIds)
             ->avg('skor_rata_rata') ?? 0;
 
         $stats = [
             'total_sekolah' => $totalSekolah,
-            'total_guru'    => $totalGuru,
-            'total_murid'   => $totalMurid,
-            'murid_laki'    => $totalMuridL,
+            'total_guru' => $totalGuru,
+            'total_murid' => $totalMurid,
+            'murid_laki' => $totalMuridL,
             'murid_perempuan' => $totalMuridP,
             'terakreditasi' => $terakreditasi,
-            'rata_sarpras'  => round($rataSarpras, 1),
+            'rata_sarpras' => round($rataSarpras, 1),
         ];
 
         $komposisiOrtuRaw = [
@@ -75,6 +76,7 @@ class DashboardController extends Controller
         $komposisiOrtu = collect($komposisiOrtuRaw)
             ->map(function ($count, $label) use ($totalMurid) {
                 $persen = $totalMurid > 0 ? round(($count / $totalMurid) * 100, 1) : 0;
+
                 return [
                     'label' => $label,
                     'count' => $count,
@@ -92,9 +94,9 @@ class DashboardController extends Controller
             ->pluck('total', 'jenjang');
 
         $jenjangLabels = ['KB', 'TK', 'SD', 'SMP', 'SMA', 'SMK'];
-        $jenjangData   = [
+        $jenjangData = [
             'labels' => $jenjangLabels,
-            'values' => array_map(fn($j) => (int) ($jenjangCounts[$j] ?? 0), $jenjangLabels),
+            'values' => array_map(fn ($j) => (int) ($jenjangCounts[$j] ?? 0), $jenjangLabels),
         ];
 
         $jenjangCardColors = [
@@ -107,7 +109,7 @@ class DashboardController extends Controller
         ];
 
         $jenjangCards = collect($jenjangLabels)
-            ->map(fn($jenjang) => [
+            ->map(fn ($jenjang) => [
                 'label' => $jenjang,
                 'count' => (int) ($jenjangCounts[$jenjang] ?? 0),
                 'badge' => $jenjangCardColors[$jenjang] ?? 'bg-gray-100 text-gray-600',
@@ -130,13 +132,13 @@ class DashboardController extends Controller
 
         $provinsiData = [
             'labels' => $wilayahCounts->pluck('nama')->toArray(),
-            'values' => $wilayahCounts->pluck('total')->map(fn($v) => (int) $v)->toArray(),
+            'values' => $wilayahCounts->pluck('total')->map(fn ($v) => (int) $v)->toArray(),
             'colors' => $provinsiColors,
         ];
 
         $maxWilayahCount = max(1, (int) ($wilayahCounts->max('total') ?? 0));
         $wilayahSummary = $wilayahCounts
-            ->map(fn($item) => [
+            ->map(fn ($item) => [
                 'label' => $item->nama,
                 'count' => (int) $item->total,
                 'percent' => round(((int) $item->total / $maxWilayahCount) * 100, 1),
@@ -175,11 +177,11 @@ class DashboardController extends Controller
 
         $akreditasiOrder = ['Unggul', 'Baik Sekali', 'Baik', 'Cukup', 'Belum Akreditasi'];
         $akreditasiSummary = collect($akreditasiOrder)
-            ->map(fn($label) => [
+            ->map(fn ($label) => [
                 'label' => $label,
                 'count' => (int) ($akreditasiCounts[$label] ?? 0),
             ])
-            ->filter(fn($item) => $item['count'] > 0)
+            ->filter(fn ($item) => $item['count'] > 0)
             ->values();
 
         if ($akreditasiSummary->isEmpty()) {
@@ -190,15 +192,15 @@ class DashboardController extends Controller
 
         $maxAkreditasiCount = max(1, (int) $akreditasiSummary->max('count'));
         $akreditasiSummary = $akreditasiSummary
-            ->map(fn($item) => $item + [
+            ->map(fn ($item) => $item + [
                 'percent' => round(($item['count'] / $maxAkreditasiCount) * 100, 1),
             ])
             ->all();
 
         $badgeColors = [
-            'KB'  => 'bg-gray-100 text-gray-600',
-            'TK'  => 'bg-amber-100 text-amber-700',
-            'SD'  => 'bg-blue-100 text-blue-700',
+            'KB' => 'bg-gray-100 text-gray-600',
+            'TK' => 'bg-amber-100 text-amber-700',
+            'SD' => 'bg-blue-100 text-blue-700',
             'SMP' => 'bg-green-100 text-green-700',
             'SMA' => 'bg-purple-100 text-purple-700',
             'SMK' => 'bg-orange-100 text-orange-700',
@@ -209,11 +211,11 @@ class DashboardController extends Controller
             ->latest()
             ->take(5)
             ->get()
-            ->map(fn($s) => [
-                'name'     => $s->nama,
-                'location' => ($s->kota?->nama ?? '') . ', ' . $s->provinsi->nama,
-                'jenjang'  => $s->jenjang,
-                'color'    => $badgeColors[$s->jenjang] ?? 'bg-gray-100 text-gray-600',
+            ->map(fn ($s) => [
+                'name' => $s->nama,
+                'location' => ($s->kota?->nama ?? '').', '.$s->provinsi->nama,
+                'jenjang' => $s->jenjang,
+                'color' => $badgeColors[$s->jenjang] ?? 'bg-gray-100 text-gray-600',
             ])->toArray();
 
         return view('dashboard', compact(

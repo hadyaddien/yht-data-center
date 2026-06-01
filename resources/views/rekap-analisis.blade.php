@@ -376,11 +376,11 @@
                         <span id="jj-sdm-luas" class="font-semibold text-[#162040]">-</span>
                     </div>
                     <div class="flex items-center justify-between border-b border-gray-100 pb-2">
-                        <span class="text-gray-500">Total BOS</span>
+                        <span class="text-gray-500">Penerimaan BOS</span>
                         <span id="jj-sdm-bos" class="font-semibold text-[#162040]">-</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-gray-500">Total BOP</span>
+                        <span class="text-gray-500">Penerimaan BOP</span>
                         <span id="jj-sdm-bop" class="font-semibold text-[#162040]">-</span>
                     </div>
                 </div>
@@ -747,8 +747,8 @@
             document.getElementById('jj-sdm-lp').textContent = totalMuridL + ' / ' + totalMuridP;
             document.getElementById('jj-sdm-rasio').textContent = rasioMuridGuru;
             document.getElementById('jj-sdm-luas').textContent = formatNumber(Math.round(totalLuas)) + ' m2';
-            document.getElementById('jj-sdm-bos').textContent = formatCurrency(totalBos);
-            document.getElementById('jj-sdm-bop').textContent = formatCurrency(totalBop);
+            document.getElementById('jj-sdm-bos').textContent = totalBos + ' sekolah menerima';
+            document.getElementById('jj-sdm-bop').textContent = totalBop + ' sekolah menerima';
             document.getElementById('jenjang-table-title').textContent = 'Sekolah Jenjang ' + j;
             document.getElementById('jenjang-table-count').textContent = filtered.length + ' sekolah';
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,22 +13,23 @@ class LoginController extends Controller
         if (Auth::check()) {
             return redirect()->route('dashboard');
         }
+
         return view('login');
     }
 
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ], [
-            'email.required'    => 'Email wajib diisi.',
-            'email.email'       => 'Format email tidak valid.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
             'password.required' => 'Password wajib diisi.',
         ]);
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            /** @var \App\Models\User|null $user */
+            /** @var User|null $user */
             $user = Auth::user();
 
             if ($user && ! $user->is_active) {
@@ -41,6 +43,7 @@ class LoginController extends Controller
             }
 
             $request->session()->regenerate();
+
             return redirect()->intended(route('dashboard'));
         }
 
@@ -54,6 +57,7 @@ class LoginController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 }

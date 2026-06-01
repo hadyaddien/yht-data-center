@@ -43,7 +43,7 @@
             @php
                 $sp = $sekolah->saranaPrasarana->first();
                 $jenjang = $sekolah->jenjang;
-                $luasTanah = $sekolah->luas_tanah;
+                $luasTanah = $sp?->luas_tanah ?? $sekolah->luas_tanah;
 
                 $badgeConfig = [
                     'KB' => ['bg' => 'bg-gray-100', 'text' => 'text-gray-600'],
@@ -54,60 +54,45 @@
                     'SMK' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-700'],
                 ][$jenjang] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-600'];
 
-                // Map kondisi enum → percentage
-                $kondisiMap = [
-                    'baik' => 100,
-                    'rusak_ringan' => 75,
-                    'rusak_sedang' => 50,
-                    'rusak_berat' => 25,
+                $sarprasItems = [
+                    'perpustakaan' => 'Perpustakaan',
+                    'laboratorium_ipa' => 'Laboratorium IPA',
+                    'laboratorium_bahasa' => 'Laboratorium Bahasa',
+                    'laboratorium_komputer' => 'Laboratorium Komputer',
+                    'ruang_keterampilan' => 'Ruang Keterampilan',
+                    'ruang_seni' => 'Ruang Seni',
+                    'ruang_osis' => 'Ruang OSIS',
+                    'uks_klinik_kesehatan' => 'UKS / Klinik Kesehatan',
+                    'ruang_kepala_sekolah' => 'Ruang Kepala Sekolah',
+                    'ruang_wakil_kepala_sekolah' => 'Ruang Wakil Kepala Sekolah',
+                    'ruang_tata_usaha' => 'Ruang Tata Usaha',
+                    'ruang_bendahara' => 'Ruang Bendahara',
+                    'ruang_guru' => 'Ruang Guru',
+                    'ruang_bk_konseling' => 'Ruang BK / Konseling',
+                    'aula_pertemuan' => 'Aula / Pertemuan',
+                    'kantin_sekolah' => 'Kantin Sekolah',
+                    'lapangan_olahraga' => 'Lapangan Olahraga',
+                    'lab_studio_kebaharian' => 'Lab / Studio Kebaharian',
+                    'toilet_terpisah' => 'Toilet Terpisah (L/P)',
+                    'taman_hijau' => 'Taman Hijau',
+                    'tempat_parkir' => 'Tempat Parkir',
+                    'ruang_ibadah' => 'Ruang Ibadah',
+                    'ape_kb_tk' => 'APE KB/TK',
+                    'ifp_dari_pemerintah' => 'IFP dari Pemerintah',
+                    'laptop_ext_hd_dari_pemerintah' => 'Laptop & Ext.HD Pemerintah',
                 ];
 
-                // Facility items
-                $facilities = [];
+                $countAda = 0;
+                $countTidak = 0;
                 if ($sp) {
-                    if ($sp->jumlah_ruang_kelas > 0 && $sp->kondisi_ruang_kelas) {
-                        $facilities[] = [
-                            'label' => 'Ruang Kelas (' . $sp->jumlah_ruang_kelas . ' ruang)',
-                            'ada' => true,
-                            'pct' => $kondisiMap[$sp->kondisi_ruang_kelas] ?? null,
-                        ];
-                    }
-                    if ($sp->memiliki_perpustakaan !== null) {
-                        $facilities[] = [
-                            'label' => 'Perpustakaan',
-                            'ada' => (bool) $sp->memiliki_perpustakaan,
-                            'pct' => $sp->memiliki_perpustakaan ? $kondisiMap[$sp->kondisi_perpustakaan] ?? null : null,
-                        ];
-                    }
-                    if ($sp->memiliki_laboratorium !== null) {
-                        $labLabel = 'Laboratorium';
-                        if ($sp->jenis_laboratorium) {
-                            $labs = array_map('trim', explode(',', $sp->jenis_laboratorium));
-                            foreach ($labs as $lab) {
-                                $facilities[] = ['label' => $lab, 'ada' => true, 'pct' => 100];
-                            }
+                    foreach (array_keys($sarprasItems) as $field) {
+                        if ($sp->{$field . '_ada'}) {
+                            $countAda++;
                         } else {
-                            $facilities[] = ['label' => $labLabel, 'ada' => false, 'pct' => null];
+                            $countTidak++;
                         }
                     }
-                    if ($sp->memiliki_uks !== null) {
-                        $facilities[] = [
-                            'label' => 'UKS / Klinik Kesehatan',
-                            'ada' => (bool) $sp->memiliki_uks,
-                            'pct' => $sp->memiliki_uks ? $kondisiMap[$sp->kondisi_uks] ?? null : null,
-                        ];
-                    }
-                    if ($sp->memiliki_lapangan !== null) {
-                        $facilities[] = [
-                            'label' => 'Lapangan Olahraga',
-                            'ada' => (bool) $sp->memiliki_lapangan,
-                            'pct' => $sp->memiliki_lapangan ? $kondisiMap[$sp->kondisi_lapangan] ?? null : null,
-                        ];
-                    }
                 }
-
-                $countAda = collect($facilities)->where('ada', true)->count();
-                $countTidak = collect($facilities)->where('ada', false)->count();
                 $skorRataRata = $sp?->skor_rata_rata ?? 0;
             @endphp
 
@@ -163,27 +148,29 @@
                         </div>
                     </div>
 
-                    @if (!$sp || empty($facilities))
+                    @if (!$sp)
                         <p class="text-sm text-center text-blue-400 py-4">Belum ada data sarana prasarana</p>
                     @else
-                        {{-- Facility List --}}
-                        <div class="mb-5 space-y-2.5">
-                            @foreach ($facilities as $fac)
+                        {{-- Facility Grid: 25 item --}}
+                        <div class="mb-5 grid grid-cols-1 md:grid-cols-2 gap-2">
+                            @foreach ($sarprasItems as $field => $label)
                                 @php
-                                    $pct = $fac['pct'];
-                                    if (!$fac['ada'] || $pct === null) {
+                                    $ada = (bool) ($sp->{$field . '_ada'} ?? false);
+                                    $pct = $sp->{$field . '_kondisi'} ?? null;
+                                    if (!$ada || $pct === null) {
                                         $barColor = 'bg-gray-200';
-                                    } elseif ($pct >= 90) {
+                                    } elseif ($pct >= 85) {
                                         $barColor = 'bg-blue-500';
-                                    } elseif ($pct >= 70) {
+                                    } elseif ($pct >= 65) {
                                         $barColor = 'bg-amber-400';
                                     } else {
                                         $barColor = 'bg-red-400';
                                     }
                                 @endphp
-                                <div class="flex items-center gap-4">
-                                    <div class="flex items-center gap-2 w-56 flex-shrink-0">
-                                        @if ($fac['ada'])
+                                <div
+                                    class="flex items-center gap-3 px-3 py-2 rounded-lg {{ $ada ? 'bg-white border border-gray-100' : 'bg-gray-50' }}">
+                                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                                        @if ($ada)
                                             <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none"
                                                 stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -197,24 +184,26 @@
                                             </svg>
                                         @endif
                                         <span
-                                            class="text-sm {{ $fac['ada'] ? 'text-gray-700' : 'text-gray-400' }}">{{ $fac['label'] }}</span>
+                                            class="text-sm truncate {{ $ada ? 'text-gray-700' : 'text-gray-400' }}">{{ $label }}</span>
                                     </div>
-                                    <div class="flex-1 flex items-center gap-3">
-                                        <div class="flex-1 bg-gray-100 rounded-full h-1.5">
-                                            <div class="{{ $barColor }} h-1.5 rounded-full transition-all"
-                                                style="width: {{ $fac['ada'] && $pct ? $pct : 0 }}%"></div>
+                                    @if ($ada && $pct !== null)
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <div class="w-16 bg-gray-100 rounded-full h-1.5">
+                                                <div class="{{ $barColor }} h-1.5 rounded-full"
+                                                    style="width: {{ $pct }}%"></div>
+                                            </div>
+                                            <span class="text-xs text-gray-500 w-8 text-right">{{ $pct }}%</span>
                                         </div>
-                                        <span class="text-xs text-gray-400 w-10 text-right">
-                                            {{ $fac['ada'] && $pct ? $pct . '%' : '-' }}
-                                        </span>
-                                    </div>
+                                    @elseif (!$ada)
+                                        <span class="text-xs text-gray-300 shrink-0">Tidak ada</span>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>
                     @endif
 
                     {{-- Lahan & Bangunan --}}
-                    @if ($luasTanah || ($sp && $sp->luas_bangunan_m2))
+                    @if ($luasTanah || ($sp && $sp->luas_bangunan))
                         <div class="border-t border-gray-100 pt-4 mt-2">
                             <p class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-3">Lahan &amp;
                                 Bangunan</p>
@@ -226,14 +215,14 @@
                                             {{ number_format($luasTanah, 0, '.', '.') }} m²</p>
                                     </div>
                                 @endif
-                                @if ($sp && $sp->luas_bangunan_m2)
+                                @if ($sp && $sp->luas_bangunan)
                                     <div>
                                         <p class="text-xs text-gray-400 mb-0.5">Luas Bangunan</p>
                                         <p class="text-lg font-bold text-[#162040]">
-                                            {{ number_format($sp->luas_bangunan_m2, 0, '.', '.') }} m²</p>
+                                            {{ number_format($sp->luas_bangunan, 0, '.', '.') }} m²</p>
                                     </div>
                                 @endif
-                                @if ($sp && $sp->status_kepemilikan === 'sewa')
+                                @if ($sp && $sp->biaya_sewa_lahan > 0)
                                     <div>
                                         <p class="text-xs text-gray-400 mb-0.5">Status</p>
                                         <p class="text-sm font-semibold text-amber-600">Sewa</p>
@@ -244,9 +233,8 @@
                     @endif
 
                 </div>
-            </div>
-        @empty
-            <div class="px-5 py-10 text-center text-sm text-gray-400">Tidak ada data sekolah.</div>
+            @empty
+                <div class="px-5 py-10 text-center text-sm text-gray-400">Tidak ada data sekolah.</div>
         @endforelse
     </div>
 @endsection

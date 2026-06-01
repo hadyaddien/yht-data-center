@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sekolah;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class TeknologiController extends Controller
 {
     public function index(Request $request)
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $sekolahList = $user

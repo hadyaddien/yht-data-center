@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Dokumen;
 use App\Models\KotaKabupaten;
 use App\Models\ProgramPendidikan;
 use App\Models\Provinsi;
@@ -9,6 +10,7 @@ use App\Models\SaranaPrasarana;
 use App\Models\Sdm;
 use App\Models\Sekolah;
 use App\Models\TeknologiPembelajaran;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +21,7 @@ class SekolahController extends Controller
 {
     private function authorizeCreateSekolah(): void
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         abort_unless(
@@ -31,7 +33,7 @@ class SekolahController extends Controller
 
     private function authorizeManageExistingSekolah(Sekolah $sekolah): void
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         abort_unless($user->canManageSekolahData(), 403, 'Anda tidak memiliki akses untuk mengubah data sekolah.');
@@ -45,7 +47,7 @@ class SekolahController extends Controller
 
     private function authorizeReferenceDataAccess(): void
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         abort_unless(
@@ -57,7 +59,7 @@ class SekolahController extends Controller
 
     private function authorizeViewSekolah(Sekolah $sekolah): void
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $canView = $user
@@ -70,7 +72,7 @@ class SekolahController extends Controller
     /* ─── LIST ─────────────────────────────────────────── */
     public function index(Request $request)
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $query = $user
@@ -86,12 +88,12 @@ class SekolahController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
                     ->orWhere('npsn', 'like', "%{$search}%")
-                    ->orWhereHas('kota', fn($k) => $k->where('name', 'like', "%{$search}%"));
+                    ->orWhereHas('kota', fn ($k) => $k->where('name', 'like', "%{$search}%"));
             });
         }
 
         $sekolahList = $query->orderBy('jenjang')->orderBy('nama')->get();
-        $total       = $sekolahList->count();
+        $total = $sekolahList->count();
 
         return view('sekolah.index', compact('sekolahList', 'total'));
     }
@@ -102,8 +104,8 @@ class SekolahController extends Controller
         $this->authorizeCreateSekolah();
 
         $provinsiList = Provinsi::orderBy('name')->get();
-        $kotaList     = collect();
-        $tahunList    = range(date('Y'), 1900);
+        $kotaList = collect();
+        $tahunList = range(date('Y'), 1900);
 
         return view('sekolah.create', compact('provinsiList', 'kotaList', 'tahunList'));
     }
@@ -125,6 +127,7 @@ class SekolahController extends Controller
         $this->saveTeknologiPembelajaran($request, $sekolah);
         $this->saveSaranaPrasarana($request, $sekolah);
         $this->saveSdm($request, $sekolah);
+        $this->saveDokumen($request, $sekolah);
 
         return redirect()->route('sekolah.index')
             ->with('success', "Sekolah \"{$sekolah->nama}\" berhasil ditambahkan.");
@@ -135,7 +138,8 @@ class SekolahController extends Controller
     {
         $this->authorizeViewSekolah($sekolah);
 
-        $sekolah->load(['kota', 'provinsi']);
+        $sekolah->load(['kota', 'provinsi', 'dokumen', 'sdm']);
+
         return view('sekolah.show', compact('sekolah'));
     }
 
@@ -144,22 +148,22 @@ class SekolahController extends Controller
     {
         $this->authorizeManageExistingSekolah($sekolah);
 
-        $sekolah->load(['kota', 'provinsi']);
-        $provinsiList   = Provinsi::orderBy('name')->get();
-        $kotaList       = $sekolah->provinsi
+        $sekolah->load(['kota', 'provinsi', 'dokumen']);
+        $provinsiList = Provinsi::orderBy('name')->get();
+        $kotaList = $sekolah->provinsi
             ? KotaKabupaten::where('province_code', $sekolah->provinsi->code)->orderBy('name')->get()
             : collect();
-        $kecamatanList  = $sekolah->kota
+        $kecamatanList = $sekolah->kota
             ? $this->districtCollectionByCityCode($sekolah->kota->code)
             : collect();
-        $kecamatanObj   = ($sekolah->kota && $sekolah->kecamatan)
+        $kecamatanObj = ($sekolah->kota && $sekolah->kecamatan)
             ? $this->findDistrictByNameAndCityCode($sekolah->kecamatan, $sekolah->kota->code)
             : null;
-        $kelurahanList  = $kecamatanObj
+        $kelurahanList = $kecamatanObj
             ? $this->villageCollectionByDistrictCode($kecamatanObj->code)
             : collect();
-        $tahunList          = range(date('Y'), 1900);
-        $programPendidikan  = $sekolah->programPendidikan()->where('tahun_ajaran', '2024/2025')->first()
+        $tahunList = range(date('Y'), 1900);
+        $programPendidikan = $sekolah->programPendidikan()->where('tahun_ajaran', '2024/2025')->first()
             ?? $sekolah->programPendidikan()->orderBy('tahun_ajaran', 'desc')->first();
         $teknologiPembelajaran = $sekolah->teknologiPembelajaran()->where('tahun_ajaran', '2024/2025')->first()
             ?? $sekolah->teknologiPembelajaran()->orderBy('tahun_ajaran', 'desc')->first();
@@ -187,6 +191,7 @@ class SekolahController extends Controller
         $this->saveTeknologiPembelajaran($request, $sekolah);
         $this->saveSaranaPrasarana($request, $sekolah);
         $this->saveSdm($request, $sekolah);
+        $this->saveDokumen($request, $sekolah);
 
         return redirect()->route('sekolah.index')
             ->with('success', "Data \"{$sekolah->nama}\" berhasil diperbarui.");
@@ -218,7 +223,7 @@ class SekolahController extends Controller
             ->where('province_code', $province->code)
             ->orderBy('name')
             ->get(['id', 'name'])
-            ->map(fn($city) => [
+            ->map(fn ($city) => [
                 'id' => $city->id,
                 'nama' => $city->name,
                 'jenis' => $city->jenis,
@@ -238,7 +243,7 @@ class SekolahController extends Controller
         }
 
         $kecamatan = $this->districtCollectionByCityCode($city->code)
-            ->map(fn($district) => [
+            ->map(fn ($district) => [
                 'id' => $district->id,
                 'nama' => $district->nama,
             ]);
@@ -262,7 +267,7 @@ class SekolahController extends Controller
             return response()->json([]);
         }
 
-        return response()->json($this->villageCollectionByDistrictCode($kec->code)->map(fn($village) => [
+        return response()->json($this->villageCollectionByDistrictCode($kec->code)->map(fn ($village) => [
             'nama' => $village->nama,
         ]));
     }
@@ -271,31 +276,33 @@ class SekolahController extends Controller
     private function rules(?int $ignoreId = null): array
     {
         return [
-            'npsn'                => ['required', 'string', 'max:20', 'unique:sekolah,npsn' . ($ignoreId ? ",{$ignoreId}" : '')],
-            'nama'                => ['required', 'string', 'max:255'],
-            'jenjang'             => ['required', 'in:KB,TK,SD,SMP,SMA,SMK'],
-            'provinsi_id'         => ['required', 'exists:indonesia_provinces,id'],
-            'kota_id'             => ['nullable', 'exists:indonesia_cities,id'],
-            'kecamatan'           => ['nullable', 'string', 'max:100'],
-            'kelurahan'           => ['nullable', 'string', 'max:100'],
-            'kode_pos'            => ['nullable', 'string', 'max:10'],
-            'alamat'              => ['nullable', 'string'],
-            'telepon'             => ['nullable', 'string', 'max:30'],
-            'fax'                 => ['nullable', 'string', 'max:30'],
-            'email'               => ['nullable', 'email', 'max:255'],
-            'website'             => ['nullable', 'url', 'max:255'],
-            'akreditasi_nilai'    => ['nullable', 'integer', 'min:0', 'max:100'],
-            'akreditasi_tahun'    => ['nullable', 'integer', 'min:1990', 'max:' . (date('Y') + 1)],
-            'no_sk_akreditasi'    => ['nullable', 'string', 'max:100'],
+            'npsn' => ['required', 'string', 'max:20', 'unique:sekolah,npsn'.($ignoreId ? ",{$ignoreId}" : '')],
+            'nama' => ['required', 'string', 'max:255'],
+            'jenjang' => ['required', 'in:KB,TK,SD,SMP,SMA,SMK'],
+            'provinsi_id' => ['required', 'exists:indonesia_provinces,id'],
+            'kota_id' => ['nullable', 'exists:indonesia_cities,id'],
+            'kecamatan' => ['nullable', 'string', 'max:100'],
+            'kelurahan' => ['nullable', 'string', 'max:100'],
+            'kode_pos' => ['nullable', 'string', 'max:10'],
+            'alamat' => ['nullable', 'string'],
+            'telepon' => ['nullable', 'string', 'max:30'],
+            'fax' => ['nullable', 'string', 'max:30'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'website' => ['nullable', 'url', 'max:255'],
+            'akreditasi_nilai' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'akreditasi_tahun' => ['nullable', 'integer', 'min:1990', 'max:'.(date('Y') + 1)],
+            'no_sk_akreditasi' => ['nullable', 'string', 'max:100'],
             'kepala_sekolah_nama' => ['nullable', 'string', 'max:255'],
-            'kepala_sekolah_nip'  => ['nullable', 'string', 'max:30'],
-            'kepala_sekolah_hp'   => ['nullable', 'string', 'max:30'],
-            'operator_nama'       => ['nullable', 'string', 'max:255'],
-            'operator_hp'         => ['nullable', 'string', 'max:30'],
-            'tahun_berdiri'       => ['nullable', 'integer', 'min:1900', 'max:' . date('Y')],
-            'luas_tanah'          => ['nullable', 'numeric', 'min:0'],
-            'kekuatan'            => ['nullable', 'string'],
-            'kelemahan'           => ['nullable', 'string'],
+            'kepala_sekolah_nip' => ['nullable', 'string', 'max:30'],
+            'kepala_sekolah_hp' => ['nullable', 'string', 'max:30'],
+            'operator_nama' => ['nullable', 'string', 'max:255'],
+            'operator_hp' => ['nullable', 'string', 'max:30'],
+            'tahun_berdiri' => ['nullable', 'integer', 'min:1900', 'max:'.date('Y')],
+            'luas_tanah' => ['nullable', 'numeric', 'min:0'],
+            'kekuatan' => ['nullable', 'string'],
+            'kelemahan' => ['nullable', 'string'],
+            'koordinat_gps' => ['nullable', 'string', 'max:255'],
+            'status_operasional' => ['nullable', 'in:aktif,tidak_aktif'],
         ];
     }
 
@@ -332,6 +339,10 @@ class SekolahController extends Controller
             'pp.jumlah_guru_kebaharian' => ['nullable', 'integer', 'min:0'],
             'pp.penerimaan_bos' => ['nullable', 'in:Menerima,Belum menerima,Tidak menerima'],
             'pp.penerimaan_bop' => ['nullable', 'in:Menerima,Belum menerima,Tidak menerima'],
+            'pp.program_unggulan' => ['nullable', 'string'],
+            'pp.ekstrakurikuler' => ['nullable', 'string'],
+            'pp.visi' => ['nullable', 'string'],
+            'pp.misi' => ['nullable', 'string'],
         ];
     }
 
@@ -358,6 +369,17 @@ class SekolahController extends Controller
             'tp.platform_komunikasi.*' => ['string', 'in:WhatsApp,Zoom Meet,Google Meet'],
             'tp.aplikasi_manajemen' => ['nullable', 'array'],
             'tp.aplikasi_manajemen.*' => ['string', 'in:Portal khusus SPMB,EdConnect,Stela,Si Aka'],
+            'tp.memiliki_lab_komputer' => ['nullable', 'boolean'],
+            'tp.jumlah_komputer_lab' => ['nullable', 'integer', 'min:0'],
+            'tp.jumlah_komputer_admin' => ['nullable', 'integer', 'min:0'],
+            'tp.jumlah_laptop_guru' => ['nullable', 'integer', 'min:0'],
+            'tp.memiliki_proyektor' => ['nullable', 'boolean'],
+            'tp.jumlah_proyektor' => ['nullable', 'integer', 'min:0'],
+            'tp.memiliki_internet' => ['nullable', 'boolean'],
+            'tp.jenis_internet' => ['nullable', 'string', 'max:100'],
+            'tp.bandwidth_mbps' => ['nullable', 'numeric', 'min:0'],
+            'tp.nama_lms' => ['nullable', 'string', 'max:255'],
+            'tp.catatan' => ['nullable', 'string'],
         ];
     }
 
@@ -421,6 +443,12 @@ class SekolahController extends Controller
             'sdm.jumlah_karyawan' => ['nullable', 'integer', 'min:0'],
             'sdm.karyawan_tetap' => ['nullable', 'integer', 'min:0'],
             'sdm.karyawan_tidak_tetap' => ['nullable', 'integer', 'min:0'],
+            'sdm.guru_pns' => ['nullable', 'integer', 'min:0'],
+            'sdm.guru_p3k' => ['nullable', 'integer', 'min:0'],
+            'sdm.guru_honorer' => ['nullable', 'integer', 'min:0'],
+            'sdm.karyawan_pns' => ['nullable', 'integer', 'min:0'],
+            'sdm.karyawan_p3k' => ['nullable', 'integer', 'min:0'],
+            'sdm.karyawan_honorer' => ['nullable', 'integer', 'min:0'],
             'sdm.jumlah_rombel' => ['nullable', 'integer', 'min:0'],
             'sdm.jumlah_murid_total' => ['nullable', 'integer', 'min:0'],
             'sdm.jumlah_murid_laki' => ['nullable', 'integer', 'min:0'],
@@ -444,14 +472,14 @@ class SekolahController extends Controller
     private function messages(): array
     {
         return [
-            'npsn.required'        => 'NPSN wajib diisi.',
-            'npsn.unique'          => 'NPSN sudah terdaftar.',
-            'nama.required'        => 'Nama sekolah wajib diisi.',
-            'jenjang.required'     => 'Jenjang wajib dipilih.',
-            'jenjang.in'           => 'Jenjang tidak valid.',
+            'npsn.required' => 'NPSN wajib diisi.',
+            'npsn.unique' => 'NPSN sudah terdaftar.',
+            'nama.required' => 'Nama sekolah wajib diisi.',
+            'jenjang.required' => 'Jenjang wajib dipilih.',
+            'jenjang.in' => 'Jenjang tidak valid.',
             'provinsi_id.required' => 'Provinsi wajib dipilih.',
-            'email.email'          => 'Format email tidak valid.',
-            'website.url'          => 'Format website tidak valid (harus diawali https://).',
+            'email.email' => 'Format email tidak valid.',
+            'website.url' => 'Format website tidak valid (harus diawali https://).',
         ];
     }
 
@@ -463,9 +491,10 @@ class SekolahController extends Controller
                 $nilai >= 91 => 'UNGGUL',
                 $nilai >= 71 => 'BAIK SEKALI',
                 $nilai >= 51 => 'BAIK',
-                default      => 'CUKUP',
+                default => 'CUKUP',
             };
         }
+
         return $data;
     }
 
@@ -476,9 +505,9 @@ class SekolahController extends Controller
             return;
         }
 
-        $toArrayOrNull = static fn($values) => empty($values)
+        $toArrayOrNull = static fn ($values) => empty($values)
             ? null
-            : array_values(array_filter((array) $values, static fn($item) => $item !== null && $item !== ''));
+            : array_values(array_filter((array) $values, static fn ($item) => $item !== null && $item !== ''));
 
         $softwareStatus = $tpInput['software_aplikasi_pembelajaran'] ?? null;
         $lmsStatus = $tpInput['lms_kemendikdasmen'] ?? null;
@@ -508,6 +537,17 @@ class SekolahController extends Controller
             'memiliki_smart_classroom' => $smartClassStatus === 'Sudah',
             'memiliki_e_perpustakaan' => $ebookStatus === 'Sudah ada',
             'memiliki_tenaga_it' => in_array($tenagaItStatus, ['Ada khusus IT', 'Ada namun paruh waktu'], true),
+            'memiliki_lab_komputer' => filter_var($tpInput['memiliki_lab_komputer'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'jumlah_komputer_lab' => isset($tpInput['jumlah_komputer_lab']) && $tpInput['jumlah_komputer_lab'] !== '' ? (int) $tpInput['jumlah_komputer_lab'] : 0,
+            'jumlah_komputer_admin' => isset($tpInput['jumlah_komputer_admin']) && $tpInput['jumlah_komputer_admin'] !== '' ? (int) $tpInput['jumlah_komputer_admin'] : 0,
+            'jumlah_laptop_guru' => isset($tpInput['jumlah_laptop_guru']) && $tpInput['jumlah_laptop_guru'] !== '' ? (int) $tpInput['jumlah_laptop_guru'] : 0,
+            'memiliki_proyektor' => filter_var($tpInput['memiliki_proyektor'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'jumlah_proyektor' => isset($tpInput['jumlah_proyektor']) && $tpInput['jumlah_proyektor'] !== '' ? (int) $tpInput['jumlah_proyektor'] : 0,
+            'memiliki_internet' => filter_var($tpInput['memiliki_internet'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'jenis_internet' => isset($tpInput['jenis_internet']) && $tpInput['jenis_internet'] !== '' ? $tpInput['jenis_internet'] : null,
+            'bandwidth_mbps' => isset($tpInput['bandwidth_mbps']) && $tpInput['bandwidth_mbps'] !== '' ? (float) $tpInput['bandwidth_mbps'] : null,
+            'nama_lms' => isset($tpInput['nama_lms']) && $tpInput['nama_lms'] !== '' ? $tpInput['nama_lms'] : null,
+            'catatan' => isset($tpInput['catatan']) && $tpInput['catatan'] !== '' ? $tpInput['catatan'] : null,
             'updated_by' => auth()->id(),
         ];
 
@@ -524,8 +564,8 @@ class SekolahController extends Controller
             return;
         }
 
-        $ppData = array_map(fn($v) => ($v === '' ? null : $v), $ppInput);
-        $hasInput = collect($ppData)->contains(fn($v) => $v !== null && $v !== '' && $v !== []);
+        $ppData = array_map(fn ($v) => ($v === '' ? null : $v), $ppInput);
+        $hasInput = collect($ppData)->contains(fn ($v) => $v !== null && $v !== '' && $v !== []);
 
         if (! $hasInput) {
             return;
@@ -575,9 +615,9 @@ class SekolahController extends Controller
             'laptop_ext_hd_dari_pemerintah',
         ];
 
-        $toBool = static fn($value): bool => filter_var($value, FILTER_VALIDATE_BOOLEAN) || (string) $value === '1';
-        $toNullableInt = static fn($value): ?int => ($value === null || $value === '') ? null : (int) $value;
-        $toNullableFloat = static fn($value): ?float => ($value === null || $value === '') ? null : (float) $value;
+        $toBool = static fn ($value): bool => filter_var($value, FILTER_VALIDATE_BOOLEAN) || (string) $value === '1';
+        $toNullableInt = static fn ($value): ?int => ($value === null || $value === '') ? null : (int) $value;
+        $toNullableFloat = static fn ($value): ?float => ($value === null || $value === '') ? null : (float) $value;
 
         $data = [
             'tahun_ajaran' => '2024/2025',
@@ -689,7 +729,7 @@ class SekolahController extends Controller
 
         $hasInput = collect($sdmInput)->contains(function ($value) {
             if (is_array($value)) {
-                return collect($value)->contains(fn($item) => $item !== null && $item !== '');
+                return collect($value)->contains(fn ($item) => $item !== null && $item !== '');
             }
 
             return $value !== null && $value !== '';
@@ -699,9 +739,9 @@ class SekolahController extends Controller
             return;
         }
 
-        $toInt = static fn($value): int => ($value === null || $value === '') ? 0 : (int) $value;
-        $toNullableInt = static fn($value): ?int => ($value === null || $value === '') ? null : (int) $value;
-        $toNullableString = static fn($value): ?string => ($value === null || trim((string) $value) === '') ? null : trim((string) $value);
+        $toInt = static fn ($value): int => ($value === null || $value === '') ? 0 : (int) $value;
+        $toNullableInt = static fn ($value): ?int => ($value === null || $value === '') ? null : (int) $value;
+        $toNullableString = static fn ($value): ?string => ($value === null || trim((string) $value) === '') ? null : trim((string) $value);
 
         $guruTetapYayasan = $toNullableInt($sdmInput['guru_tetap_yayasan'] ?? null);
         $guruTidakTetap = $toNullableInt($sdmInput['guru_tidak_tetap'] ?? null);
@@ -790,12 +830,12 @@ class SekolahController extends Controller
             'masa_jabatan_kepsek' => $toNullableInt($sdmInput['masa_jabatan_kepsek'] ?? null),
             'hambatan_tantangan' => $hambatanTantangan,
             // Mapping backward-compatible agar modul rekap/cetak lama tetap terbaca.
-            'guru_pns' => (int) ($guruTetapYayasan ?? 0),
-            'guru_honorer' => (int) ($guruTidakTetap ?? max(0, (int) ($jumlahGuru ?? 0) - (int) ($guruTetapYayasan ?? 0))),
-            'guru_p3k' => 0,
-            'karyawan_pns' => (int) ($karyawanTetap ?? 0),
-            'karyawan_honorer' => (int) ($karyawanTidakTetap ?? max(0, (int) ($jumlahKaryawan ?? 0) - (int) ($karyawanTetap ?? 0))),
-            'karyawan_p3k' => 0,
+            'guru_pns' => $toInt($sdmInput['guru_pns'] ?? 0),
+            'guru_honorer' => $toInt($sdmInput['guru_honorer'] ?? 0),
+            'guru_p3k' => $toInt($sdmInput['guru_p3k'] ?? 0),
+            'karyawan_pns' => $toInt($sdmInput['karyawan_pns'] ?? 0),
+            'karyawan_honorer' => $toInt($sdmInput['karyawan_honorer'] ?? 0),
+            'karyawan_p3k' => $toInt($sdmInput['karyawan_p3k'] ?? 0),
             'guru_bersertifikasi' => $guruSertifikasi,
             'guru_s1_keatas' => $guruS1Pendidikan + $guruS1NonPendidikan + $guruS2 + $guruS3,
             'catatan_hambatan' => $hambatanTantangan,
@@ -808,13 +848,67 @@ class SekolahController extends Controller
         );
     }
 
+    private function saveDokumen(Request $request, Sekolah $sekolah): void
+    {
+        $kategoriMap = [
+            'dokumen_identitas' => 'identitas',
+            'dokumen_program' => 'program_pendidikan',
+            'dokumen_teknologi' => 'teknologi',
+            'dokumen_sarpras' => 'sarpras',
+            'dokumen_sdm' => 'sdm',
+        ];
+
+        $allowedMimes = [
+            'png',
+            'jpg',
+            'jpeg',
+            'gif',
+            'webp',
+            'pdf',
+            'doc',
+            'docx',
+            'xls',
+            'xlsx',
+            'csv',
+        ];
+
+        foreach ($kategoriMap as $inputName => $kategori) {
+            if (! $request->hasFile($inputName)) {
+                continue;
+            }
+
+            foreach ($request->file($inputName) as $file) {
+                if (! $file->isValid()) {
+                    continue;
+                }
+
+                $ext = strtolower($file->getClientOriginalExtension());
+                if (! in_array($ext, $allowedMimes)) {
+                    continue;
+                }
+
+                $path = $file->store("dokumen/{$sekolah->id}/{$kategori}", 'public');
+
+                Dokumen::create([
+                    'sekolah_id' => $sekolah->id,
+                    'uploaded_by' => auth()->id(),
+                    'kategori' => $kategori,
+                    'nama' => $file->getClientOriginalName(),
+                    'path' => $path,
+                    'ukuran_bytes' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
+                ]);
+            }
+        }
+    }
+
     private function districtCollectionByCityCode(string $cityCode): Collection
     {
         return District::query()
             ->where('city_code', $cityCode)
             ->orderBy('name')
             ->get(['id', 'code', 'name'])
-            ->map(fn($district) => (object) [
+            ->map(fn ($district) => (object) [
                 'id' => $district->id,
                 'code' => $district->code,
                 'nama' => $district->name,
@@ -840,7 +934,7 @@ class SekolahController extends Controller
             ->where('district_code', $districtCode)
             ->orderBy('name')
             ->get(['id', 'name'])
-            ->map(fn($village) => (object) [
+            ->map(fn ($village) => (object) [
                 'id' => $village->id,
                 'nama' => $village->name,
             ]);

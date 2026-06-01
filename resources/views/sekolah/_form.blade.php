@@ -19,7 +19,16 @@
     $pp = $programPendidikan ?? null;
     $pv_pp = fn(string $f, $d = '') => old("pp.$f", $pp?->$f ?? $d);
     $tp = $teknologiPembelajaran ?? null;
-    $pv_tp = fn(string $f, $d = '') => old("tp.$f", $tp?->$f ?? $d);
+    $tpFieldMap = [
+        'software_aplikasi_pembelajaran' => 'software_aplikasi_pembelajaran_status',
+        'lms_kemendikdasmen' => 'lms_kemendikdasmen_status',
+        'aplikasi_smart_classroom' => 'aplikasi_smart_classroom_status',
+        'koleksi_ebook' => 'koleksi_ebook_status',
+        'website_sekolah' => 'website_sekolah_status',
+        'server_pembelajaran' => 'server_pembelajaran_status',
+        'tenaga_khusus_it' => 'tenaga_khusus_it_status',
+    ];
+    $pv_tp = fn(string $f, $d = '') => old("tp.$f", $tp?->{$tpFieldMap[$f] ?? $f} ?? $d);
     $pv_tp_arr = function (string $f) use ($tp) {
         $value = old("tp.$f", $tp?->$f ?? []);
         if (is_string($value)) {
@@ -133,7 +142,7 @@
     }
 </style>
 
-<form method="POST" action="{{ $action }}" id="sekolah-form">
+<form method="POST" action="{{ $action }}" id="sekolah-form" enctype="multipart/form-data">
     @csrf
     @if ($method === 'PUT')
         @method('PUT')
@@ -451,6 +460,22 @@
                     <input type="text" name="kode_pos" value="{{ $v('kode_pos') }}" placeholder="12345"
                         class="form-input" maxlength="10">
                 </div>
+                <div class="sm:col-span-2">
+                    <label class="form-label flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-[#162040]" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Koordinat GPS / Link Embed Peta
+                    </label>
+                    <input type="text" name="koordinat_gps" value="{{ $v('koordinat_gps') }}"
+                        placeholder="Contoh: -6.2088,106.8456 atau link Google Maps embed" class="form-input">
+                    <p class="text-[10px] text-gray-400 mt-1">Masukkan koordinat (latitude, longitude) atau link embed
+                        peta lokasi sekolah</p>
+                </div>
             </div>
         </div>
 
@@ -490,10 +515,105 @@
             </div>
         </div>
 
+        {{-- STATUS OPERASIONAL --}}
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="form-section-bar"></span>
+                <span class="form-section-label">Status Operasional Sekolah</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="status_operasional" value="aktif"
+                        class="w-4 h-4 text-[#162040] border-gray-300 focus:ring-[#162040]"
+                        {{ $v('status_operasional', 'aktif') === 'aktif' ? 'checked' : '' }}>
+                    <span class="text-sm font-medium text-green-700 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+                        Aktif
+                    </span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="status_operasional" value="tidak_aktif"
+                        class="w-4 h-4 text-[#162040] border-gray-300 focus:ring-[#162040]"
+                        {{ $v('status_operasional') === 'tidak_aktif' ? 'checked' : '' }}>
+                    <span class="text-sm font-medium text-rose-600 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+                        Tidak Aktif
+                    </span>
+                </label>
+            </div>
+        </div>
+
+        {{-- UPLOAD DOKUMEN --}}
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="form-section-bar"></span>
+                <span class="form-section-label">Upload Dokumen</span>
+            </div>
+            <div>
+                <label class="form-label text-xs text-gray-500">Unggah file pendukung (Surat Akreditasi, SK, Foto, dll)
+                    — Maks. 10MB per file</label>
+                <input type="file" name="dokumen_identitas[]" multiple
+                    accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.csv"
+                    class="file-upload-input block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#eef3f9] file:text-[#162040] hover:file:bg-[#dce5f3] cursor-pointer mt-2"
+                    data-preview="preview-identitas">
+            </div>
+            <div id="preview-identitas" class="file-preview-list mt-2 space-y-1"></div>
+            @if ($isEdit && $sekolah->dokumen->where('kategori', 'identitas')->count())
+                <div class="mt-3 space-y-1">
+                    <p class="text-[10px] text-gray-400 font-medium">File tersimpan:</p>
+                    @foreach ($sekolah->dokumen->where('kategori', 'identitas') as $doc)
+                        <div
+                            class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 group">
+                            <x-file-icon :mime="$doc->mime_type" class="w-4 h-4 flex-shrink-0 text-gray-400" />
+                            <a href="{{ Storage::url($doc->path) }}" target="_blank"
+                                class="hover:text-[#162040] underline truncate flex-1">{{ $doc->nama }}</a>
+                            <span
+                                class="text-[10px] text-gray-400 flex-shrink-0">{{ round($doc->ukuran_bytes / 1024, 1) }}
+                                KB</span>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
     </div>{{-- end tab-identitas --}}
 
     {{-- TAB: PROGRAM PENDIDIKAN --}}
     <div id="tab-program" class="tab-panel hidden">
+
+        {{-- VISI & MISI --}}
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="form-section-bar"></span>
+                <span class="form-section-label">Visi &amp; Misi</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
+                <div>
+                    <label class="form-label flex items-center gap-1.5 text-[#162040]">
+                        <svg class="w-3.5 h-3.5 text-[#162040]" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Visi
+                    </label>
+                    <textarea name="pp[visi]" rows="4" placeholder="Tuliskan visi sekolah..." class="form-input resize-none">{{ $pv_pp('visi') }}</textarea>
+                </div>
+                <div>
+                    <label class="form-label flex items-center gap-1.5 text-[#162040]">
+                        <svg class="w-3.5 h-3.5 text-[#162040]" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        Misi
+                    </label>
+                    <textarea name="pp[misi]" rows="4" placeholder="Tuliskan misi sekolah..." class="form-input resize-none">{{ $pv_pp('misi') }}</textarea>
+                </div>
+            </div>
+        </div>
 
         {{-- NILAI UJIAN SEKOLAH --}}
         <div class="form-section">
@@ -680,8 +800,8 @@
                     <label class="form-label">Kurikulum Kebaharian</label>
                     <div class="relative">
                         <select name="pp[kurikulum_kebaharian]" class="form-select">
-                            <option value="" {{ $placeholderSelected($pv_pp('kurikulum_kebaharian')) }} disabled
-                                hidden>Pilih</option>
+                            <option value="" {{ $placeholderSelected($pv_pp('kurikulum_kebaharian')) }}
+                                disabled hidden>Pilih</option>
                             @foreach (['Sudah berjalan', 'Belum berjalan', 'Tidak ada'] as $opt)
                                 <option value="{{ $opt }}"
                                     {{ $pv_pp('kurikulum_kebaharian') === $opt ? 'selected' : '' }}>
@@ -740,6 +860,65 @@
             </div>
         </div>
 
+        {{-- PROGRAM UNGGULAN & EKSTRAKURIKULER --}}
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="form-section-bar"></span>
+                <span class="form-section-label">Program Unggulan &amp; Ekstrakurikuler</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
+                <div>
+                    <label class="form-label">Program Unggulan</label>
+                    <textarea name="pp[program_unggulan]" rows="4" placeholder="Deskripsikan program unggulan sekolah..."
+                        class="form-input">{{ $pv_pp('program_unggulan') }}</textarea>
+                    @error('pp.program_unggulan')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label class="form-label">Ekstrakurikuler</label>
+                    <textarea name="pp[ekstrakurikuler]" rows="4" placeholder="Daftar kegiatan ekstrakurikuler..."
+                        class="form-input">{{ $pv_pp('ekstrakurikuler') }}</textarea>
+                    @error('pp.ekstrakurikuler')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
+        {{-- UPLOAD DOKUMEN --}}
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="form-section-bar"></span>
+                <span class="form-section-label">Upload Dokumen</span>
+            </div>
+            <div>
+                <label class="form-label text-xs text-gray-500">Unggah file pendukung (Nilai, Rapor, Sertifikat
+                    Prestasi, dll) — Maks. 10MB per file</label>
+                <input type="file" name="dokumen_program[]" multiple
+                    accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.csv"
+                    class="file-upload-input block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#eef3f9] file:text-[#162040] hover:file:bg-[#dce5f3] cursor-pointer mt-2"
+                    data-preview="preview-program">
+            </div>
+            <div id="preview-program" class="file-preview-list mt-2 space-y-1"></div>
+            @if ($isEdit && $sekolah->dokumen->where('kategori', 'program_pendidikan')->count())
+                <div class="mt-3 space-y-1">
+                    <p class="text-[10px] text-gray-400 font-medium">File tersimpan:</p>
+                    @foreach ($sekolah->dokumen->where('kategori', 'program_pendidikan') as $doc)
+                        <div
+                            class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 group">
+                            <x-file-icon :mime="$doc->mime_type" class="w-4 h-4 flex-shrink-0 text-gray-400" />
+                            <a href="{{ Storage::url($doc->path) }}" target="_blank"
+                                class="hover:text-[#162040] underline truncate flex-1">{{ $doc->nama }}</a>
+                            <span
+                                class="text-[10px] text-gray-400 flex-shrink-0">{{ round($doc->ukuran_bytes / 1024, 1) }}
+                                KB</span>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
     </div>{{-- end tab-program --}}
 
     {{-- TAB: TEKNOLOGI --}}
@@ -756,13 +935,13 @@
                         'label' => 'Software Aplikasi Pembelajaran',
                         'options' => ['Sudah', 'Proses uji coba', 'Belum menggunakan'],
                     ],
-                    'lms_kemendikdasmen' => [
-                        'label' => 'LMS Kemendikdasmen',
-                        'options' => ['Sudah', 'Proses pelatihan', 'Belum tahu'],
-                    ],
                     'aplikasi_smart_classroom' => [
                         'label' => 'Aplikasi Smart Classroom',
                         'options' => ['Sudah', 'Dalam proses pemasangan', 'Belum ada'],
+                    ],
+                    'lms_kemendikdasmen' => [
+                        'label' => 'LMS Kemendikdasmen',
+                        'options' => ['Sudah', 'Proses pelatihan', 'Belum tahu'],
                     ],
                     'koleksi_ebook' => [
                         'label' => 'Koleksi E-Book',
@@ -785,24 +964,63 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
                 @foreach ($techDropdowns as $field => $config)
-                    <div>
-                        <label class="form-label">{{ $config['label'] }}</label>
-                        <div class="relative">
-                            <select name="tp[{{ $field }}]" class="form-select">
-                                <option value="" {{ $placeholderSelected($pv_tp($field)) }} disabled hidden>
-                                    Pilih
-                                </option>
-                                @foreach ($config['options'] as $opt)
-                                    <option value="{{ $opt }}"
-                                        {{ $pv_tp($field) === $opt ? 'selected' : '' }}>
-                                        {{ $opt }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <x-select-chevron />
+                    @if ($field === 'lms_kemendikdasmen')
+                        <div class="md:col-span-2">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-3">
+                                <div>
+                                    <label class="form-label">{{ $config['label'] }}</label>
+                                    <div class="relative">
+                                        <select name="tp[{{ $field }}]" class="form-select">
+                                            <option value="" {{ $placeholderSelected($pv_tp($field)) }}
+                                                disabled hidden>
+                                                Pilih
+                                            </option>
+                                            @foreach ($config['options'] as $opt)
+                                                <option value="{{ $opt }}"
+                                                    {{ $pv_tp($field) === $opt ? 'selected' : '' }}>
+                                                    {{ $opt }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <x-select-chevron />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label">Nama LMS yang Digunakan</label>
+                                    <input type="text" name="tp[nama_lms]" value="{{ $pv_tp('nama_lms') }}"
+                                        placeholder="Contoh: Google Classroom, Moodle, LMS Kemdikbud..."
+                                        class="form-input">
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    @else
+                        <div>
+                            <label class="form-label">{{ $config['label'] }}</label>
+                            <div class="relative">
+                                <select name="tp[{{ $field }}]" class="form-select">
+                                    <option value="" {{ $placeholderSelected($pv_tp($field)) }} disabled
+                                        hidden>
+                                        Pilih
+                                    </option>
+                                    @foreach ($config['options'] as $opt)
+                                        <option value="{{ $opt }}"
+                                            {{ $pv_tp($field) === $opt ? 'selected' : '' }}>
+                                            {{ $opt }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <x-select-chevron />
+                            </div>
+                        </div>
+                    @endif
                 @endforeach
+            </div>
+
+            {{-- CATATAN TAMBAHAN --}}
+            <div class="mt-4">
+                <label class="form-label">Catatan Tambahan Teknologi</label>
+                <textarea name="tp[catatan]" rows="3"
+                    placeholder="Catatan tambahan terkait teknologi pembelajaran di sekolah..." class="form-input resize-none">{{ $pv_tp('catatan') }}</textarea>
             </div>
         </div>
 
@@ -861,6 +1079,173 @@
                 </div>
             </div>
         @endforeach
+        {{-- PERANGKAT KERAS & INFRASTRUKTUR --}}
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="form-section-bar"></span>
+                <span class="form-section-label">Perangkat Keras &amp; Infrastruktur</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-5 gap-y-4">
+
+                <div>
+                    <label class="form-label">Lab Komputer</label>
+                    <div class="relative">
+                        @php $valLabKomp = $pv_tp('memiliki_lab_komputer'); @endphp
+                        <select name="tp[memiliki_lab_komputer]" class="form-select">
+                            <option value="" {{ $placeholderSelected($valLabKomp) }} disabled hidden>Pilih
+                            </option>
+                            <option value="1"
+                                {{ $valLabKomp === true || $valLabKomp === 1 || $valLabKomp === '1' ? 'selected' : '' }}>
+                                Ada</option>
+                            <option value="0"
+                                {{ $valLabKomp === false || $valLabKomp === 0 || $valLabKomp === '0' ? 'selected' : '' }}>
+                                Tidak Ada</option>
+                        </select>
+                        <x-select-chevron />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Jumlah Komputer Lab</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="tp[jumlah_komputer_lab]"
+                            value="{{ $pv_tp('jumlah_komputer_lab') }}" min="0" step="1"
+                            inputmode="numeric" placeholder="0" class="form-input">
+                        <span class="text-xs text-gray-500 shrink-0">unit</span>
+                    </div>
+                    @error('tp.jumlah_komputer_lab')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Jumlah Komputer Admin</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="tp[jumlah_komputer_admin]"
+                            value="{{ $pv_tp('jumlah_komputer_admin') }}" min="0" step="1"
+                            inputmode="numeric" placeholder="0" class="form-input">
+                        <span class="text-xs text-gray-500 shrink-0">unit</span>
+                    </div>
+                    @error('tp.jumlah_komputer_admin')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Jumlah Laptop Guru</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="tp[jumlah_laptop_guru]"
+                            value="{{ $pv_tp('jumlah_laptop_guru') }}" min="0" step="1"
+                            inputmode="numeric" placeholder="0" class="form-input">
+                        <span class="text-xs text-gray-500 shrink-0">unit</span>
+                    </div>
+                    @error('tp.jumlah_laptop_guru')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Proyektor</label>
+                    <div class="relative">
+                        @php $valProy = $pv_tp('memiliki_proyektor'); @endphp
+                        <select name="tp[memiliki_proyektor]" class="form-select">
+                            <option value="" {{ $placeholderSelected($valProy) }} disabled hidden>Pilih
+                            </option>
+                            <option value="1"
+                                {{ $valProy === true || $valProy === 1 || $valProy === '1' ? 'selected' : '' }}>Ada
+                            </option>
+                            <option value="0"
+                                {{ $valProy === false || $valProy === 0 || $valProy === '0' ? 'selected' : '' }}>
+                                Tidak Ada</option>
+                        </select>
+                        <x-select-chevron />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Jumlah Proyektor</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="tp[jumlah_proyektor]" value="{{ $pv_tp('jumlah_proyektor') }}"
+                            min="0" step="1" inputmode="numeric" placeholder="0" class="form-input">
+                        <span class="text-xs text-gray-500 shrink-0">unit</span>
+                    </div>
+                    @error('tp.jumlah_proyektor')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Koneksi Internet</label>
+                    <div class="relative">
+                        @php $valInet = $pv_tp('memiliki_internet'); @endphp
+                        <select name="tp[memiliki_internet]" class="form-select">
+                            <option value="" {{ $placeholderSelected($valInet) }} disabled hidden>Pilih
+                            </option>
+                            <option value="1"
+                                {{ $valInet === true || $valInet === 1 || $valInet === '1' ? 'selected' : '' }}>Ada
+                            </option>
+                            <option value="0"
+                                {{ $valInet === false || $valInet === 0 || $valInet === '0' ? 'selected' : '' }}>
+                                Tidak Ada</option>
+                        </select>
+                        <x-select-chevron />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Jenis Internet</label>
+                    <input type="text" name="tp[jenis_internet]" value="{{ $pv_tp('jenis_internet') }}"
+                        placeholder="Fiber, 4G, DSL, dll" class="form-input">
+                    @error('tp.jenis_internet')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Bandwidth Internet</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="tp[bandwidth_mbps]" value="{{ $pv_tp('bandwidth_mbps') }}"
+                            min="0" step="0.1" inputmode="decimal" placeholder="0" class="form-input">
+                        <span class="text-xs text-gray-500 shrink-0">Mbps</span>
+                    </div>
+                    @error('tp.bandwidth_mbps')
+                        <p class="form-error">{{ $message }}</p>
+                    @enderror
+                </div>
+
+            </div>
+        </div>
+
+        {{-- UPLOAD DOKUMEN --}}
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="form-section-bar"></span>
+                <span class="form-section-label">Upload Dokumen</span>
+            </div>
+            <div>
+                <label class="form-label text-xs text-gray-500">Unggah file pendukung (Foto Perangkat, Spesifikasi,
+                    dll) — Maks. 10MB per file</label>
+                <input type="file" name="dokumen_teknologi[]" multiple
+                    accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.csv"
+                    class="file-upload-input block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#eef3f9] file:text-[#162040] hover:file:bg-[#dce5f3] cursor-pointer mt-2"
+                    data-preview="preview-teknologi">
+            </div>
+            <div id="preview-teknologi" class="file-preview-list mt-2 space-y-1"></div>
+            @if ($isEdit && $sekolah->dokumen->where('kategori', 'teknologi')->count())
+                <div class="mt-3 space-y-1">
+                    <p class="text-[10px] text-gray-400 font-medium">File tersimpan:</p>
+                    @foreach ($sekolah->dokumen->where('kategori', 'teknologi') as $doc)
+                        <div
+                            class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 group">
+                            <x-file-icon :mime="$doc->mime_type" class="w-4 h-4 flex-shrink-0 text-gray-400" />
+                            <a href="{{ Storage::url($doc->path) }}" target="_blank"
+                                class="hover:text-[#162040] underline truncate flex-1">{{ $doc->nama }}</a>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
     </div>{{-- end tab-teknologi --}}
 
     {{-- TAB: SARANA PRASARANA --}}
@@ -971,6 +1356,39 @@
             </div>
         </div>
 
+        {{-- UPLOAD DOKUMEN --}}
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="form-section-bar"></span>
+                <span class="form-section-label">Upload Dokumen</span>
+            </div>
+            <div>
+                <label class="form-label text-xs text-gray-500">Unggah file pendukung (Foto Sarpras, Denah, dll) —
+                    Maks. 10MB per file</label>
+                <input type="file" name="dokumen_sarpras[]" multiple
+                    accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.csv"
+                    class="file-upload-input block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#eef3f9] file:text-[#162040] hover:file:bg-[#dce5f3] cursor-pointer mt-2"
+                    data-preview="preview-sarpras">
+            </div>
+            <div id="preview-sarpras" class="file-preview-list mt-2 space-y-1"></div>
+            @if ($isEdit && $sekolah->dokumen->where('kategori', 'sarpras')->count())
+                <div class="mt-3 space-y-1">
+                    <p class="text-[10px] text-gray-400 font-medium">File tersimpan:</p>
+                    @foreach ($sekolah->dokumen->where('kategori', 'sarpras') as $doc)
+                        <div
+                            class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 group">
+                            <x-file-icon :mime="$doc->mime_type" class="w-4 h-4 flex-shrink-0 text-gray-400" />
+                            <a href="{{ Storage::url($doc->path) }}" target="_blank"
+                                class="hover:text-[#162040] underline truncate flex-1">{{ $doc->nama }}</a>
+                            <span
+                                class="text-[10px] text-gray-400 flex-shrink-0">{{ round($doc->ukuran_bytes / 1024, 1) }}
+                                KB</span>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
     </div>{{-- end tab-sarpras --}}
 
 
@@ -1036,6 +1454,36 @@
                     @error('sdm.guru_tidak_tetap')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
+                </div>
+
+                <div>
+                    <label class="form-label">Guru PNS</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="sdm[guru_pns]" value="{{ $pv_sdm('guru_pns') }}"
+                            min="0" step="1" inputmode="numeric" placeholder="0"
+                            class="form-input sdm-integer">
+                        <span class="text-xs text-gray-500 shrink-0">orang</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Guru P3K</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="sdm[guru_p3k]" value="{{ $pv_sdm('guru_p3k') }}"
+                            min="0" step="1" inputmode="numeric" placeholder="0"
+                            class="form-input sdm-integer">
+                        <span class="text-xs text-gray-500 shrink-0">orang</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Guru Honorer</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="sdm[guru_honorer]" value="{{ $pv_sdm('guru_honorer') }}"
+                            min="0" step="1" inputmode="numeric" placeholder="0"
+                            class="form-input sdm-integer">
+                        <span class="text-xs text-gray-500 shrink-0">orang</span>
+                    </div>
                 </div>
 
                 <div>
@@ -1142,6 +1590,36 @@
                     @enderror
                 </div>
 
+                <div>
+                    <label class="form-label">Karyawan PNS</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="sdm[karyawan_pns]" value="{{ $pv_sdm('karyawan_pns') }}"
+                            min="0" step="1" inputmode="numeric" placeholder="0"
+                            class="form-input sdm-integer">
+                        <span class="text-xs text-gray-500 shrink-0">orang</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Karyawan P3K</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="sdm[karyawan_p3k]" value="{{ $pv_sdm('karyawan_p3k') }}"
+                            min="0" step="1" inputmode="numeric" placeholder="0"
+                            class="form-input sdm-integer">
+                        <span class="text-xs text-gray-500 shrink-0">orang</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Karyawan Honorer</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" name="sdm[karyawan_honorer]"
+                            value="{{ $pv_sdm('karyawan_honorer') }}" min="0" step="1"
+                            inputmode="numeric" placeholder="0" class="form-input sdm-integer">
+                        <span class="text-xs text-gray-500 shrink-0">orang</span>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -1191,9 +1669,10 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-4 mt-3">
                 <div>
                     <label class="form-label">Ortu TNI AL</label>
-                    <input type="number" name="sdm[murid_ortu_tni_al]" value="{{ $pv_sdm('murid_ortu_tni_al') }}"
-                        min="0" step="1" inputmode="numeric" placeholder="Contoh: 5"
-                        class="form-input sdm-integer" data-ortu-count>
+                    <input type="number" name="sdm[murid_ortu_tni_al]"
+                        value="{{ $pv_sdm('murid_ortu_tni_al') }}" min="0" step="1"
+                        inputmode="numeric" placeholder="Contoh: 5" class="form-input sdm-integer"
+                        data-ortu-count>
                     @error('sdm.murid_ortu_tni_al')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
@@ -1211,9 +1690,10 @@
 
                 <div>
                     <label class="form-label">Ortu Polisi</label>
-                    <input type="number" name="sdm[murid_ortu_polisi]" value="{{ $pv_sdm('murid_ortu_polisi') }}"
-                        min="0" step="1" inputmode="numeric" placeholder="Contoh: 6"
-                        class="form-input sdm-integer" data-ortu-count>
+                    <input type="number" name="sdm[murid_ortu_polisi]"
+                        value="{{ $pv_sdm('murid_ortu_polisi') }}" min="0" step="1"
+                        inputmode="numeric" placeholder="Contoh: 6" class="form-input sdm-integer"
+                        data-ortu-count>
                     @error('sdm.murid_ortu_polisi')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
@@ -1233,7 +1713,8 @@
                     <label class="form-label">Ortu Pengusaha</label>
                     <input type="number" name="sdm[murid_ortu_pengusaha]"
                         value="{{ $pv_sdm('murid_ortu_pengusaha') }}" min="0" step="1"
-                        inputmode="numeric" placeholder="Contoh: 15" class="form-input sdm-integer" data-ortu-count>
+                        inputmode="numeric" placeholder="Contoh: 15" class="form-input sdm-integer"
+                        data-ortu-count>
                     @error('sdm.murid_ortu_pengusaha')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
@@ -1243,7 +1724,8 @@
                     <label class="form-label">Ortu Wiraswasta</label>
                     <input type="number" name="sdm[murid_ortu_wiraswasta]"
                         value="{{ $pv_sdm('murid_ortu_wiraswasta') }}" min="0" step="1"
-                        inputmode="numeric" placeholder="Contoh: 40" class="form-input sdm-integer" data-ortu-count>
+                        inputmode="numeric" placeholder="Contoh: 40" class="form-input sdm-integer"
+                        data-ortu-count>
                     @error('sdm.murid_ortu_wiraswasta')
                         <p class="form-error">{{ $message }}</p>
                     @enderror
@@ -1358,6 +1840,39 @@
                     <p class="form-error">{{ $message }}</p>
                 @enderror
             </div>
+        </div>
+
+        {{-- UPLOAD DOKUMEN --}}
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="form-section-bar"></span>
+                <span class="form-section-label">Upload Dokumen</span>
+            </div>
+            <div>
+                <label class="form-label text-xs text-gray-500">Unggah file pendukung (Data Guru, SK, Sertifikat
+                    Pendidik, dll) — Maks. 10MB per file</label>
+                <input type="file" name="dokumen_sdm[]" multiple
+                    accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.csv"
+                    class="file-upload-input block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#eef3f9] file:text-[#162040] hover:file:bg-[#dce5f3] cursor-pointer mt-2"
+                    data-preview="preview-sdm">
+            </div>
+            <div id="preview-sdm" class="file-preview-list mt-2 space-y-1"></div>
+            @if ($isEdit && $sekolah->dokumen->where('kategori', 'sdm')->count())
+                <div class="mt-3 space-y-1">
+                    <p class="text-[10px] text-gray-400 font-medium">File tersimpan:</p>
+                    @foreach ($sekolah->dokumen->where('kategori', 'sdm') as $doc)
+                        <div
+                            class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 group">
+                            <x-file-icon :mime="$doc->mime_type" class="w-4 h-4 flex-shrink-0 text-gray-400" />
+                            <a href="{{ Storage::url($doc->path) }}" target="_blank"
+                                class="hover:text-[#162040] underline truncate flex-1">{{ $doc->nama }}</a>
+                            <span
+                                class="text-[10px] text-gray-400 flex-shrink-0">{{ round($doc->ukuran_bytes / 1024, 1) }}
+                                KB</span>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         </div>
 
     </div>{{-- end tab-sdm --}}
@@ -1849,5 +2364,89 @@
         initSdmNumericInputs();
         initSdmMuridTotal();
         initSdmOrtuComposition();
+        initFilePreviews();
     });
+
+    function fileIconSvg(type) {
+        if (type.startsWith('image/')) {
+            return '<svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>';
+        }
+        if (type === 'application/pdf') {
+            return '<svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>';
+        }
+        if (type.includes('word') || type.includes('document')) {
+            return '<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
+        }
+        if (type.includes('sheet') || type.includes('excel') || type.includes('csv')) {
+            return '<svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
+        }
+        return '<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>';
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function initFilePreviews() {
+        document.querySelectorAll('.file-upload-input').forEach(function(input) {
+            var previewId = input.getAttribute('data-preview');
+            var container = document.getElementById(previewId);
+            if (!container) return;
+
+            input.addEventListener('change', function() {
+                container.innerHTML = '';
+                var files = Array.from(input.files);
+                if (files.length === 0) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                var heading = document.createElement('p');
+                heading.className = 'text-[10px] text-gray-400 font-medium mb-1';
+                heading.textContent = files.length + ' file dipilih:';
+                container.appendChild(heading);
+
+                files.forEach(function(file, idx) {
+                    var row = document.createElement('div');
+                    row.className =
+                        'flex items-center gap-2 text-xs text-gray-700 bg-blue-50/60 rounded-lg px-3 py-2';
+
+                    var iconHtml = fileIconSvg(file.type);
+
+                    var nameSpan = document.createElement('span');
+                    nameSpan.className = 'truncate flex-1 font-medium';
+                    nameSpan.textContent = file.name;
+
+                    var sizeSpan = document.createElement('span');
+                    sizeSpan.className = 'text-[10px] text-gray-400 flex-shrink-0';
+                    sizeSpan.textContent = formatFileSize(file.size);
+
+                    // Image preview thumbnail
+                    if (file.type.startsWith('image/')) {
+                        var img = document.createElement('img');
+                        img.className =
+                            'w-8 h-8 rounded object-cover flex-shrink-0 border border-gray-200';
+                        var url = URL.createObjectURL(file);
+                        img.src = url;
+                        img.onload = function() {
+                            URL.revokeObjectURL(url);
+                        };
+                        row.innerHTML = '';
+                        row.appendChild(img);
+                        var textWrap = document.createElement('div');
+                        textWrap.className = 'flex-1 min-w-0 flex items-center gap-2';
+                        textWrap.innerHTML = iconHtml + nameSpan.outerHTML;
+                        row.appendChild(textWrap);
+                        row.appendChild(sizeSpan);
+                    } else {
+                        row.innerHTML = iconHtml + nameSpan.outerHTML + sizeSpan.outerHTML;
+                    }
+
+                    container.appendChild(row);
+                });
+            });
+        });
+    }
 </script>

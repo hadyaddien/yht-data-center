@@ -347,24 +347,117 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
-                        <p class="text-xs font-semibold text-[#162040] mb-2">
+                        <p class="text-xs font-semibold text-green-700 mb-2">
                             Kekuatan / Keunggulan
                         </p>
                         <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                            {{ $display($sekolah->kekuatan, 'Belum ada data kekuatan / keunggulan.') }}
+                            {{ $display($sekolah->kekuatan, 'Belum ada data.') }}
                         </p>
                     </div>
 
                     <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
-                        <p class="text-xs font-semibold text-[#162040] mb-2">
+                        <p class="text-xs font-semibold text-rose-600 mb-2">
                             Kelemahan / Tantangan
                         </p>
                         <p class="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                            {{ $display($sekolah->kelemahan, 'Belum ada data kelemahan / tantangan.') }}
+                            {{ $display($sekolah->kelemahan, 'Belum ada data.') }}
                         </p>
                     </div>
                 </div>
             </div>
+
+            {{-- Status & SDM Ringkasan --}}
+            @php $sdmData = $sekolah->sdm()->orderBy('tahun_ajaran', 'desc')->first(); @endphp
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <div class="form-section-title mb-4">
+                    <span class="form-section-bar"></span>
+                    <span class="form-section-label">Status &amp; SDM Ringkasan</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
+                        <p class="text-xs text-gray-400 mb-1">Status Operasional</p>
+                        <span
+                            class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold
+                            {{ $sekolah->status_operasional === 'tidak_aktif' ? 'bg-rose-100 text-rose-700' : 'bg-green-100 text-green-700' }}">
+                            {{ $sekolah->status_operasional === 'tidak_aktif' ? 'Tidak Aktif' : 'Aktif' }}
+                        </span>
+                    </div>
+                    <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
+                        <p class="text-xs text-gray-400 mb-1">Total Guru</p>
+                        <p class="text-lg font-bold text-[#162040]">{{ $display($sdmData?->jumlah_guru) }}</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
+                        <p class="text-xs text-gray-400 mb-1">Total Karyawan</p>
+                        <p class="text-lg font-bold text-[#162040]">{{ $display($sdmData?->jumlah_karyawan) }}</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
+                        <p class="text-xs text-gray-400 mb-1">Total Murid</p>
+                        <p class="text-lg font-bold text-[#162040]">{{ $display($sdmData?->jumlah_murid_total) }}</p>
+                    </div>
+                </div>
+
+                @if ($sdmData)
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
+                            <p class="text-xs font-semibold text-[#162040] mb-2">Breakdown Guru</p>
+                            <div class="space-y-1 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-500">PNS</span><span
+                                        class="font-medium">{{ $display($sdmData->guru_pns) }}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">P3K</span><span
+                                        class="font-medium">{{ $display($sdmData->guru_p3k) }}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Honorer</span><span
+                                        class="font-medium">{{ $display($sdmData->guru_honorer) }}</span></div>
+                                <div class="flex justify-between border-t pt-1 mt-1"><span
+                                        class="font-semibold">Total</span><span
+                                        class="font-bold">{{ $display($sdmData->total_guru) }}</span></div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
+                            <p class="text-xs font-semibold text-[#162040] mb-2">Breakdown Karyawan</p>
+                            <div class="space-y-1 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-500">PNS</span><span
+                                        class="font-medium">{{ $display($sdmData->karyawan_pns) }}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">P3K</span><span
+                                        class="font-medium">{{ $display($sdmData->karyawan_p3k) }}</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Honorer</span><span
+                                        class="font-medium">{{ $display($sdmData->karyawan_honorer) }}</span></div>
+                                <div class="flex justify-between border-t pt-1 mt-1"><span
+                                        class="font-semibold">Total</span><span
+                                        class="font-bold">{{ $display($sdmData->total_karyawan) }}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            {{-- Dokumen --}}
+            @php $dokumenList = $sekolah->dokumen; @endphp
+            @if ($dokumenList->isNotEmpty())
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <div class="form-section-title mb-4">
+                        <span class="form-section-bar"></span>
+                        <span class="form-section-label">Dokumen</span>
+                    </div>
+                    <div class="space-y-2">
+                        @foreach ($dokumenList->groupBy('kategori') as $kat => $docs)
+                            <div class="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+                                <p class="text-xs font-semibold text-[#162040] uppercase mb-2">
+                                    {{ str_replace('_', ' ', $kat) }}</p>
+                                @foreach ($docs as $doc)
+                                    <div class="flex items-center gap-2 text-sm py-1">
+                                        <x-file-icon :mime="$doc->mime_type" class="w-4 h-4 flex-shrink-0 text-gray-400" />
+                                        <a href="{{ Storage::url($doc->path) }}" target="_blank"
+                                            class="text-[#162040] hover:underline truncate">{{ $doc->nama }}</a>
+                                        <span
+                                            class="text-xs text-gray-400 ml-auto">{{ round($doc->ukuran_bytes / 1024, 1) }}
+                                            KB</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
         </div>
     </div>

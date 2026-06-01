@@ -13,6 +13,7 @@ class ProfileController extends Controller
     public function show()
     {
         $user = Auth::user()->load(['provinsi', 'sekolah.kota']);
+
         return view('profile', compact('user'));
     }
 
@@ -21,20 +22,20 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $rules = [
-            'name'  => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$user->id],
         ];
 
         if ($request->filled('password')) {
             $rules['current_password'] = ['required', 'current_password'];
-            $rules['password']         = ['required', 'confirmed', Password::min(8)];
+            $rules['password'] = ['required', 'confirmed', Password::min(8)];
         }
 
         $validated = $request->validate($rules, [
             'current_password.current_password' => 'Password saat ini tidak sesuai.',
         ]);
 
-        $user->name  = $validated['name'];
+        $user->name = $validated['name'];
         $user->email = $validated['email'];
 
         if ($request->filled('password')) {
@@ -51,9 +52,9 @@ class ProfileController extends Controller
         $request->validate([
             'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ], [
-            'avatar.image'   => 'File harus berupa gambar.',
-            'avatar.mimes'   => 'Format yang didukung: JPG, PNG, WEBP.',
-            'avatar.max'     => 'Ukuran gambar maksimal 2MB.',
+            'avatar.image' => 'File harus berupa gambar.',
+            'avatar.mimes' => 'Format yang didukung: JPG, PNG, WEBP.',
+            'avatar.max' => 'Ukuran gambar maksimal 2MB.',
         ]);
 
         $user = Auth::user();
