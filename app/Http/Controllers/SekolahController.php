@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Kecamatan;
 use App\Models\KotaKabupaten;
 use App\Models\ProgramPendidikan;
 use App\Models\Provinsi;
+use App\Models\SaranaPrasarana;
 use App\Models\Sdm;
 use App\Models\Sekolah;
 use App\Models\TeknologiPembelajaran;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
+use Laravolt\Indonesia\Models\District;
+use Laravolt\Indonesia\Models\Village;
 
 class SekolahController extends Controller
 {
@@ -83,7 +86,7 @@ class SekolahController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
                     ->orWhere('npsn', 'like', "%{$search}%")
-                    ->orWhereHas('kota', fn($k) => $k->where('nama', 'like', "%{$search}%"));
+                    ->orWhereHas('kota', fn($k) => $k->where('name', 'like', "%{$search}%"));
             });
         }
 
@@ -98,7 +101,7 @@ class SekolahController extends Controller
     {
         $this->authorizeCreateSekolah();
 
-        $provinsiList = Provinsi::orderBy('nama')->get();
+        $provinsiList = Provinsi::orderBy('name')->get();
         $kotaList     = collect();
         $tahunList    = range(date('Y'), 1900);
 
@@ -111,25 +114,17 @@ class SekolahController extends Controller
         $this->authorizeCreateSekolah();
 
         $validated = $request->validate(
-            array_merge($this->rules(), $this->programPendidikanRules(), $this->teknologiRules(), $this->sdmRules()),
+            array_merge($this->rules(), $this->programPendidikanRules(), $this->teknologiRules(), $this->sarprasRules(), $this->sdmRules()),
             $this->messages()
         );
         $validated = $this->enrichAkreditasiPredikat($validated);
 
         $sekolah = Sekolah::create($validated);
 
-        // Simpan data Program Pendidikan jika ada
-        $ppInput = $request->input('pp', []);
-        if (!empty($ppInput)) {
-            $ppData = array_map(fn($v) => ($v === '' ? null : $v), $ppInput);
-            ProgramPendidikan::updateOrCreate(
-                ['sekolah_id' => $sekolah->id],
-                $ppData + ['updated_by' => auth()->id()]
-            );
-        }
-
+        $this->saveProgramPendidikan($request, $sekolah);
         $this->saveTeknologiPembelajaran($request, $sekolah);
-        $this->saveSdmSiswa($request, $sekolah);
+        $this->saveSaranaPrasarana($request, $sekolah);
+        $this->saveSdm($request, $sekolah);
 
         return redirect()->route('sekolah.index')
             ->with('success', "Sekolah \"{$sekolah->nama}\" berhasil ditambahkan.");
@@ -150,25 +145,29 @@ class SekolahController extends Controller
         $this->authorizeManageExistingSekolah($sekolah);
 
         $sekolah->load(['kota', 'provinsi']);
-        $provinsiList   = Provinsi::orderBy('nama')->get();
-        $kotaList       = $sekolah->provinsi_id
-            ? KotaKabupaten::where('provinsi_id', $sekolah->provinsi_id)->orderBy('nama')->get()
+        $provinsiList   = Provinsi::orderBy('name')->get();
+        $kotaList       = $sekolah->provinsi
+            ? KotaKabupaten::where('province_code', $sekolah->provinsi->code)->orderBy('name')->get()
             : collect();
-        $kecamatanList  = $sekolah->kota_id
-            ? Kecamatan::where('kota_kabupaten_id', $sekolah->kota_id)->orderBy('nama')->get()
+        $kecamatanList  = $sekolah->kota
+            ? $this->districtCollectionByCityCode($sekolah->kota->code)
             : collect();
-        $kecamatanObj   = ($sekolah->kota_id && $sekolah->kecamatan)
-            ? Kecamatan::where('nama', $sekolah->kecamatan)->where('kota_kabupaten_id', $sekolah->kota_id)->first()
+        $kecamatanObj   = ($sekolah->kota && $sekolah->kecamatan)
+            ? $this->findDistrictByNameAndCityCode($sekolah->kecamatan, $sekolah->kota->code)
             : null;
         $kelurahanList  = $kecamatanObj
-            ? \App\Models\Kelurahan::where('kecamatan_id', $kecamatanObj->id)->orderBy('nama')->get()
+            ? $this->villageCollectionByDistrictCode($kecamatanObj->code)
             : collect();
         $tahunList          = range(date('Y'), 1900);
-        $programPendidikan  = $sekolah->programPendidikan()->first();
-        $teknologiPembelajaran = $sekolah->teknologiPembelajaran()->first();
+        $programPendidikan  = $sekolah->programPendidikan()->where('tahun_ajaran', '2024/2025')->first()
+            ?? $sekolah->programPendidikan()->orderBy('tahun_ajaran', 'desc')->first();
+        $teknologiPembelajaran = $sekolah->teknologiPembelajaran()->where('tahun_ajaran', '2024/2025')->first()
+            ?? $sekolah->teknologiPembelajaran()->orderBy('tahun_ajaran', 'desc')->first();
+        $saranaPrasarana = $sekolah->saranaPrasarana()->where('tahun_ajaran', '2024/2025')->first()
+            ?? $sekolah->saranaPrasarana()->orderBy('tahun_ajaran', 'desc')->first();
         $sdm = $sekolah->sdm()->orderBy('tahun_ajaran', 'desc')->first();
 
-        return view('sekolah.edit', compact('sekolah', 'provinsiList', 'kotaList', 'kecamatanList', 'kelurahanList', 'tahunList', 'programPendidikan', 'teknologiPembelajaran', 'sdm'));
+        return view('sekolah.edit', compact('sekolah', 'provinsiList', 'kotaList', 'kecamatanList', 'kelurahanList', 'tahunList', 'programPendidikan', 'teknologiPembelajaran', 'saranaPrasarana', 'sdm'));
     }
 
     /* ─── UPDATE ────────────────────────────────────────── */
@@ -177,25 +176,17 @@ class SekolahController extends Controller
         $this->authorizeManageExistingSekolah($sekolah);
 
         $validated = $request->validate(
-            array_merge($this->rules($sekolah->id), $this->programPendidikanRules(), $this->teknologiRules(), $this->sdmRules()),
+            array_merge($this->rules($sekolah->id), $this->programPendidikanRules(), $this->teknologiRules(), $this->sarprasRules(), $this->sdmRules()),
             $this->messages()
         );
         $validated = $this->enrichAkreditasiPredikat($validated);
 
         $sekolah->update($validated);
 
-        // Simpan data Program Pendidikan jika ada
-        $ppInput = $request->input('pp', []);
-        if (!empty($ppInput)) {
-            $ppData = array_map(fn($v) => ($v === '' ? null : $v), $ppInput);
-            ProgramPendidikan::updateOrCreate(
-                ['sekolah_id' => $sekolah->id],
-                $ppData + ['updated_by' => auth()->id()]
-            );
-        }
-
+        $this->saveProgramPendidikan($request, $sekolah);
         $this->saveTeknologiPembelajaran($request, $sekolah);
-        $this->saveSdmSiswa($request, $sekolah);
+        $this->saveSaranaPrasarana($request, $sekolah);
+        $this->saveSdm($request, $sekolah);
 
         return redirect()->route('sekolah.index')
             ->with('success', "Data \"{$sekolah->nama}\" berhasil diperbarui.");
@@ -218,9 +209,20 @@ class SekolahController extends Controller
     {
         $this->authorizeReferenceDataAccess();
 
-        $kota = KotaKabupaten::where('provinsi_id', $request->provinsi_id)
-            ->orderBy('nama')
-            ->get(['id', 'nama', 'jenis']);
+        $province = Provinsi::query()->find($request->provinsi_id);
+        if (! $province) {
+            return response()->json([]);
+        }
+
+        $kota = KotaKabupaten::query()
+            ->where('province_code', $province->code)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn($city) => [
+                'id' => $city->id,
+                'nama' => $city->name,
+                'jenis' => $city->jenis,
+            ]);
 
         return response()->json($kota);
     }
@@ -230,9 +232,16 @@ class SekolahController extends Controller
     {
         $this->authorizeReferenceDataAccess();
 
-        $kecamatan = Kecamatan::where('kota_kabupaten_id', $request->kota_id)
-            ->orderBy('nama')
-            ->get(['id', 'nama']);
+        $city = KotaKabupaten::query()->find($request->kota_id);
+        if (! $city) {
+            return response()->json([]);
+        }
+
+        $kecamatan = $this->districtCollectionByCityCode($city->code)
+            ->map(fn($district) => [
+                'id' => $district->id,
+                'nama' => $district->nama,
+            ]);
 
         return response()->json($kecamatan);
     }
@@ -242,17 +251,20 @@ class SekolahController extends Controller
     {
         $this->authorizeReferenceDataAccess();
 
-        $kec = Kecamatan::where('nama', $request->kecamatan_nama)
-            ->where('kota_kabupaten_id', $request->kota_id)
-            ->first();
+        $city = KotaKabupaten::query()->find($request->kota_id);
+        if (! $city) {
+            return response()->json([]);
+        }
+
+        $kec = $this->findDistrictByNameAndCityCode((string) $request->kecamatan_nama, $city->code);
 
         if (! $kec) {
             return response()->json([]);
         }
 
-        return response()->json(
-            \App\Models\Kelurahan::where('kecamatan_id', $kec->id)->orderBy('nama')->get(['nama'])
-        );
+        return response()->json($this->villageCollectionByDistrictCode($kec->code)->map(fn($village) => [
+            'nama' => $village->nama,
+        ]));
     }
 
     /* ─── HELPERS ──────────────────────────────────────── */
@@ -262,8 +274,8 @@ class SekolahController extends Controller
             'npsn'                => ['required', 'string', 'max:20', 'unique:sekolah,npsn' . ($ignoreId ? ",{$ignoreId}" : '')],
             'nama'                => ['required', 'string', 'max:255'],
             'jenjang'             => ['required', 'in:KB,TK,SD,SMP,SMA,SMK'],
-            'provinsi_id'         => ['required', 'exists:provinsi,id'],
-            'kota_id'             => ['nullable', 'exists:kota_kabupaten,id'],
+            'provinsi_id'         => ['required', 'exists:indonesia_provinces,id'],
+            'kota_id'             => ['nullable', 'exists:indonesia_cities,id'],
             'kecamatan'           => ['nullable', 'string', 'max:100'],
             'kelurahan'           => ['nullable', 'string', 'max:100'],
             'kode_pos'            => ['nullable', 'string', 'max:10'],
@@ -349,10 +361,66 @@ class SekolahController extends Controller
         ];
     }
 
+    private function sarprasRules(): array
+    {
+        $items = [
+            'perpustakaan',
+            'laboratorium_ipa',
+            'laboratorium_bahasa',
+            'laboratorium_komputer',
+            'ruang_keterampilan',
+            'ruang_seni',
+            'ruang_osis',
+            'uks_klinik_kesehatan',
+            'ruang_kepala_sekolah',
+            'ruang_wakil_kepala_sekolah',
+            'ruang_tata_usaha',
+            'ruang_bendahara',
+            'ruang_guru',
+            'ruang_bk_konseling',
+            'aula_pertemuan',
+            'kantin_sekolah',
+            'lapangan_olahraga',
+            'lab_studio_kebaharian',
+            'toilet_terpisah',
+            'taman_hijau',
+            'tempat_parkir',
+            'ruang_ibadah',
+            'ape_kb_tk',
+            'ifp_dari_pemerintah',
+            'laptop_ext_hd_dari_pemerintah',
+        ];
+
+        $rules = [
+            'sp' => ['sometimes', 'array'],
+            'sp.luas_tanah' => ['nullable', 'numeric', 'min:0'],
+            'sp.luas_bangunan' => ['nullable', 'numeric', 'min:0'],
+            'sp.biaya_sewa_lahan' => ['nullable', 'integer', 'min:0'],
+        ];
+
+        foreach ($items as $item) {
+            $rules["sp.{$item}_ada"] = ['nullable', 'boolean'];
+            $rules["sp.{$item}_kondisi"] = ['nullable', 'integer', 'min:0', 'max:100'];
+        }
+
+        return $rules;
+    }
+
     private function sdmRules(): array
     {
         return [
             'sdm' => ['sometimes', 'array'],
+            'sdm.jumlah_guru' => ['nullable', 'integer', 'min:0'],
+            'sdm.guru_tetap_yayasan' => ['nullable', 'integer', 'min:0'],
+            'sdm.guru_tidak_tetap' => ['nullable', 'integer', 'min:0'],
+            'sdm.guru_s1_pendidikan' => ['nullable', 'integer', 'min:0'],
+            'sdm.guru_s1_non_pendidikan' => ['nullable', 'integer', 'min:0'],
+            'sdm.guru_s2' => ['nullable', 'integer', 'min:0'],
+            'sdm.guru_s3' => ['nullable', 'integer', 'min:0'],
+            'sdm.guru_sertifikasi' => ['nullable', 'integer', 'min:0'],
+            'sdm.jumlah_karyawan' => ['nullable', 'integer', 'min:0'],
+            'sdm.karyawan_tetap' => ['nullable', 'integer', 'min:0'],
+            'sdm.karyawan_tidak_tetap' => ['nullable', 'integer', 'min:0'],
             'sdm.jumlah_rombel' => ['nullable', 'integer', 'min:0'],
             'sdm.jumlah_murid_total' => ['nullable', 'integer', 'min:0'],
             'sdm.jumlah_murid_laki' => ['nullable', 'integer', 'min:0'],
@@ -366,6 +434,10 @@ class SekolahController extends Controller
             'sdm.murid_ortu_buruh' => ['nullable', 'integer', 'min:0'],
             'sdm.murid_ortu_guru' => ['nullable', 'integer', 'min:0'],
             'sdm.murid_ortu_lainnya_jumlah' => ['nullable', 'integer', 'min:0'],
+            'sdm.rata_gaji_guru' => ['nullable', 'integer', 'min:0'],
+            'sdm.rata_gaji_karyawan' => ['nullable', 'integer', 'min:0'],
+            'sdm.masa_jabatan_kepsek' => ['nullable', 'integer', 'min:0'],
+            'sdm.hambatan_tantangan' => ['nullable', 'string'],
         ];
     }
 
@@ -445,16 +517,215 @@ class SekolahController extends Controller
         );
     }
 
-    private function saveSdmSiswa(Request $request, Sekolah $sekolah): void
+    private function saveProgramPendidikan(Request $request, Sekolah $sekolah): void
+    {
+        $ppInput = $request->input('pp', []);
+        if (empty($ppInput)) {
+            return;
+        }
+
+        $ppData = array_map(fn($v) => ($v === '' ? null : $v), $ppInput);
+        $hasInput = collect($ppData)->contains(fn($v) => $v !== null && $v !== '' && $v !== []);
+
+        if (! $hasInput) {
+            return;
+        }
+
+        ProgramPendidikan::updateOrCreate(
+            ['sekolah_id' => $sekolah->id],
+            $ppData + [
+                'tahun_ajaran' => '2024/2025',
+                'updated_by' => auth()->id(),
+            ]
+        );
+    }
+
+    private function saveSaranaPrasarana(Request $request, Sekolah $sekolah): void
+    {
+        $spInput = $request->input('sp', []);
+        if (empty($spInput)) {
+            return;
+        }
+
+        $items = [
+            'perpustakaan',
+            'laboratorium_ipa',
+            'laboratorium_bahasa',
+            'laboratorium_komputer',
+            'ruang_keterampilan',
+            'ruang_seni',
+            'ruang_osis',
+            'uks_klinik_kesehatan',
+            'ruang_kepala_sekolah',
+            'ruang_wakil_kepala_sekolah',
+            'ruang_tata_usaha',
+            'ruang_bendahara',
+            'ruang_guru',
+            'ruang_bk_konseling',
+            'aula_pertemuan',
+            'kantin_sekolah',
+            'lapangan_olahraga',
+            'lab_studio_kebaharian',
+            'toilet_terpisah',
+            'taman_hijau',
+            'tempat_parkir',
+            'ruang_ibadah',
+            'ape_kb_tk',
+            'ifp_dari_pemerintah',
+            'laptop_ext_hd_dari_pemerintah',
+        ];
+
+        $toBool = static fn($value): bool => filter_var($value, FILTER_VALIDATE_BOOLEAN) || (string) $value === '1';
+        $toNullableInt = static fn($value): ?int => ($value === null || $value === '') ? null : (int) $value;
+        $toNullableFloat = static fn($value): ?float => ($value === null || $value === '') ? null : (float) $value;
+
+        $data = [
+            'tahun_ajaran' => '2024/2025',
+            'updated_by' => auth()->id(),
+        ];
+
+        $hasInput = false;
+        $scores = [];
+
+        foreach ($items as $item) {
+            $adaField = "{$item}_ada";
+            $kondisiField = "{$item}_kondisi";
+
+            $isAvailable = $toBool($spInput[$adaField] ?? false);
+            $condition = $toNullableInt($spInput[$kondisiField] ?? null);
+            $condition = $isAvailable ? $condition : null;
+
+            $data[$adaField] = $isAvailable;
+            $data[$kondisiField] = $condition;
+
+            if ($isAvailable || $condition !== null) {
+                $hasInput = true;
+            }
+
+            if ($isAvailable && $condition !== null) {
+                $scores[] = $condition;
+            }
+        }
+
+        $luasTanah = $toNullableFloat($spInput['luas_tanah'] ?? null);
+        $luasBangunan = $toNullableFloat($spInput['luas_bangunan'] ?? null);
+        $biayaSewaLahan = $toNullableInt($spInput['biaya_sewa_lahan'] ?? null);
+
+        if ($luasTanah !== null || $luasBangunan !== null || $biayaSewaLahan !== null) {
+            $hasInput = true;
+        }
+
+        if (! $hasInput) {
+            return;
+        }
+
+        $jenisLaboratorium = [];
+        if ($data['laboratorium_ipa_ada'] ?? false) {
+            $jenisLaboratorium[] = 'IPA';
+        }
+        if ($data['laboratorium_bahasa_ada'] ?? false) {
+            $jenisLaboratorium[] = 'Bahasa';
+        }
+        if ($data['laboratorium_komputer_ada'] ?? false) {
+            $jenisLaboratorium[] = 'Komputer';
+        }
+        if ($data['lab_studio_kebaharian_ada'] ?? false) {
+            $jenisLaboratorium[] = 'Kebaharian';
+        }
+
+        $data += [
+            'luas_tanah' => $luasTanah,
+            'luas_bangunan' => $luasBangunan,
+            'biaya_sewa_lahan' => $biayaSewaLahan,
+            // Mapping backward-compatible untuk laporan lama.
+            'memiliki_perpustakaan' => (bool) ($data['perpustakaan_ada'] ?? false),
+            'kondisi_perpustakaan' => $this->sarprasLegacyConditionFromPercent($data['perpustakaan_kondisi'] ?? null),
+            'memiliki_laboratorium' => ! empty($jenisLaboratorium),
+            'jenis_laboratorium' => empty($jenisLaboratorium) ? null : implode(', ', $jenisLaboratorium),
+            'memiliki_uks' => (bool) ($data['uks_klinik_kesehatan_ada'] ?? false),
+            'kondisi_uks' => $this->sarprasLegacyConditionFromPercent($data['uks_klinik_kesehatan_kondisi'] ?? null),
+            'memiliki_lapangan' => (bool) ($data['lapangan_olahraga_ada'] ?? false),
+            'kondisi_lapangan' => $this->sarprasLegacyConditionFromPercent($data['lapangan_olahraga_kondisi'] ?? null),
+            'luas_bangunan_m2' => $luasBangunan,
+            'status_kepemilikan' => ($biayaSewaLahan !== null && $biayaSewaLahan > 0) ? 'sewa' : null,
+            'skor_rata_rata' => $this->sarprasAverageScore($scores),
+        ];
+
+        SaranaPrasarana::updateOrCreate(
+            ['sekolah_id' => $sekolah->id, 'tahun_ajaran' => '2024/2025'],
+            $data
+        );
+    }
+
+    private function sarprasLegacyConditionFromPercent(?int $percent): ?string
+    {
+        if ($percent === null) {
+            return null;
+        }
+
+        return match (true) {
+            $percent >= 85 => 'baik',
+            $percent >= 65 => 'rusak_ringan',
+            $percent >= 40 => 'rusak_sedang',
+            default => 'rusak_berat',
+        };
+    }
+
+    private function sarprasAverageScore(array $scores): ?float
+    {
+        if (empty($scores)) {
+            return null;
+        }
+
+        return round(array_sum($scores) / count($scores), 2);
+    }
+
+    private function saveSdm(Request $request, Sekolah $sekolah): void
     {
         $sdmInput = $request->input('sdm', []);
         if (empty($sdmInput)) {
             return;
         }
 
-        $muridLaki = (int) ($sdmInput['jumlah_murid_laki'] ?? 0);
-        $muridPerempuan = (int) ($sdmInput['jumlah_murid_perempuan'] ?? 0);
+        $hasInput = collect($sdmInput)->contains(function ($value) {
+            if (is_array($value)) {
+                return collect($value)->contains(fn($item) => $item !== null && $item !== '');
+            }
+
+            return $value !== null && $value !== '';
+        });
+
+        if (! $hasInput) {
+            return;
+        }
+
+        $toInt = static fn($value): int => ($value === null || $value === '') ? 0 : (int) $value;
+        $toNullableInt = static fn($value): ?int => ($value === null || $value === '') ? null : (int) $value;
+        $toNullableString = static fn($value): ?string => ($value === null || trim((string) $value) === '') ? null : trim((string) $value);
+
+        $guruTetapYayasan = $toNullableInt($sdmInput['guru_tetap_yayasan'] ?? null);
+        $guruTidakTetap = $toNullableInt($sdmInput['guru_tidak_tetap'] ?? null);
+        $jumlahGuru = $toNullableInt($sdmInput['jumlah_guru'] ?? null);
+
+        if ($jumlahGuru === null) {
+            $jumlahGuru = ($guruTetapYayasan ?? 0) + ($guruTidakTetap ?? 0);
+        }
+
+        $karyawanTetap = $toNullableInt($sdmInput['karyawan_tetap'] ?? null);
+        $karyawanTidakTetap = $toNullableInt($sdmInput['karyawan_tidak_tetap'] ?? null);
+        $jumlahKaryawan = $toNullableInt($sdmInput['jumlah_karyawan'] ?? null);
+
+        if ($jumlahKaryawan === null) {
+            $jumlahKaryawan = ($karyawanTetap ?? 0) + ($karyawanTidakTetap ?? 0);
+        }
+
+        $muridLaki = $toInt($sdmInput['jumlah_murid_laki'] ?? 0);
+        $muridPerempuan = $toInt($sdmInput['jumlah_murid_perempuan'] ?? 0);
         $muridTotal = $muridLaki + $muridPerempuan;
+
+        if ($muridTotal === 0) {
+            $muridTotal = $toInt($sdmInput['jumlah_murid_total'] ?? 0);
+        }
 
         $ortuFields = [
             'murid_ortu_tni_al',
@@ -480,59 +751,98 @@ class SekolahController extends Controller
 
         $lainnyaJumlah = max(0, $muridTotal - $jumlahOrtu);
 
+        $guruS1Pendidikan = $toInt($sdmInput['guru_s1_pendidikan'] ?? 0);
+        $guruS1NonPendidikan = $toInt($sdmInput['guru_s1_non_pendidikan'] ?? 0);
+        $guruS2 = $toInt($sdmInput['guru_s2'] ?? 0);
+        $guruS3 = $toInt($sdmInput['guru_s3'] ?? 0);
+        $guruSertifikasi = $toInt($sdmInput['guru_sertifikasi'] ?? 0);
+        $hambatanTantangan = $toNullableString($sdmInput['hambatan_tantangan'] ?? null);
+
         $data = [
             'tahun_ajaran' => '2024/2025',
-            'jumlah_rombel' => (int) ($sdmInput['jumlah_rombel'] ?? 0),
+            'jumlah_guru' => (int) ($jumlahGuru ?? 0),
+            'guru_tetap_yayasan' => (int) ($guruTetapYayasan ?? 0),
+            'guru_tidak_tetap' => (int) ($guruTidakTetap ?? 0),
+            'guru_s1_pendidikan' => $guruS1Pendidikan,
+            'guru_s1_non_pendidikan' => $guruS1NonPendidikan,
+            'guru_s2' => $guruS2,
+            'guru_s3' => $guruS3,
+            'guru_sertifikasi' => $guruSertifikasi,
+            'jumlah_karyawan' => (int) ($jumlahKaryawan ?? 0),
+            'karyawan_tetap' => (int) ($karyawanTetap ?? 0),
+            'karyawan_tidak_tetap' => (int) ($karyawanTidakTetap ?? 0),
+            'jumlah_rombel' => $toInt($sdmInput['jumlah_rombel'] ?? 0),
             'jumlah_murid_total' => $muridTotal,
             'jumlah_murid_laki' => $muridLaki,
             'jumlah_murid_perempuan' => $muridPerempuan,
-            'murid_ortu_tni_al' => (int) ($sdmInput['murid_ortu_tni_al'] ?? 0),
-            'murid_ortu_tni' => (int) ($sdmInput['murid_ortu_tni'] ?? 0),
-            'murid_ortu_polisi' => (int) ($sdmInput['murid_ortu_polisi'] ?? 0),
-            'murid_ortu_pns' => (int) ($sdmInput['murid_ortu_pns'] ?? 0),
-            'murid_ortu_pengusaha' => (int) ($sdmInput['murid_ortu_pengusaha'] ?? 0),
-            'murid_ortu_wiraswasta' => (int) ($sdmInput['murid_ortu_wiraswasta'] ?? 0),
-            'murid_ortu_buruh' => (int) ($sdmInput['murid_ortu_buruh'] ?? 0),
-            'murid_ortu_guru' => (int) ($sdmInput['murid_ortu_guru'] ?? 0),
+            'murid_ortu_tni_al' => $toInt($sdmInput['murid_ortu_tni_al'] ?? 0),
+            'murid_ortu_tni' => $toInt($sdmInput['murid_ortu_tni'] ?? 0),
+            'murid_ortu_polisi' => $toInt($sdmInput['murid_ortu_polisi'] ?? 0),
+            'murid_ortu_pns' => $toInt($sdmInput['murid_ortu_pns'] ?? 0),
+            'murid_ortu_pengusaha' => $toInt($sdmInput['murid_ortu_pengusaha'] ?? 0),
+            'murid_ortu_wiraswasta' => $toInt($sdmInput['murid_ortu_wiraswasta'] ?? 0),
+            'murid_ortu_buruh' => $toInt($sdmInput['murid_ortu_buruh'] ?? 0),
+            'murid_ortu_guru' => $toInt($sdmInput['murid_ortu_guru'] ?? 0),
             'murid_ortu_lainnya_label' => null,
             'murid_ortu_lainnya_jumlah' => $lainnyaJumlah,
+            'rata_gaji_guru' => $toNullableInt($sdmInput['rata_gaji_guru'] ?? null),
+            'rata_gaji_karyawan' => $toNullableInt($sdmInput['rata_gaji_karyawan'] ?? null),
+            'masa_jabatan_kepsek' => $toNullableInt($sdmInput['masa_jabatan_kepsek'] ?? null),
+            'hambatan_tantangan' => $hambatanTantangan,
+            // Mapping backward-compatible agar modul rekap/cetak lama tetap terbaca.
+            'guru_pns' => (int) ($guruTetapYayasan ?? 0),
+            'guru_honorer' => (int) ($guruTidakTetap ?? max(0, (int) ($jumlahGuru ?? 0) - (int) ($guruTetapYayasan ?? 0))),
+            'guru_p3k' => 0,
+            'karyawan_pns' => (int) ($karyawanTetap ?? 0),
+            'karyawan_honorer' => (int) ($karyawanTidakTetap ?? max(0, (int) ($jumlahKaryawan ?? 0) - (int) ($karyawanTetap ?? 0))),
+            'karyawan_p3k' => 0,
+            'guru_bersertifikasi' => $guruSertifikasi,
+            'guru_s1_keatas' => $guruS1Pendidikan + $guruS1NonPendidikan + $guruS2 + $guruS3,
+            'catatan_hambatan' => $hambatanTantangan,
             'updated_by' => auth()->id(),
         ];
-
-        $fieldsToCheck = [
-            'jumlah_rombel',
-            'jumlah_murid_total',
-            'jumlah_murid_laki',
-            'jumlah_murid_perempuan',
-            'murid_ortu_tni_al',
-            'murid_ortu_tni',
-            'murid_ortu_polisi',
-            'murid_ortu_pns',
-            'murid_ortu_pengusaha',
-            'murid_ortu_wiraswasta',
-            'murid_ortu_buruh',
-            'murid_ortu_guru',
-            'murid_ortu_lainnya_jumlah',
-        ];
-
-        $hasInput = false;
-        foreach ($fieldsToCheck as $field) {
-            if (!array_key_exists($field, $sdmInput)) {
-                continue;
-            }
-            if ($sdmInput[$field] !== '' && $sdmInput[$field] !== null) {
-                $hasInput = true;
-                break;
-            }
-        }
-
-        if (! $hasInput) {
-            return;
-        }
 
         Sdm::updateOrCreate(
             ['sekolah_id' => $sekolah->id, 'tahun_ajaran' => '2024/2025'],
             $data
         );
+    }
+
+    private function districtCollectionByCityCode(string $cityCode): Collection
+    {
+        return District::query()
+            ->where('city_code', $cityCode)
+            ->orderBy('name')
+            ->get(['id', 'code', 'name'])
+            ->map(fn($district) => (object) [
+                'id' => $district->id,
+                'code' => $district->code,
+                'nama' => $district->name,
+            ]);
+    }
+
+    private function findDistrictByNameAndCityCode(string $name, string $cityCode): ?District
+    {
+        $normalized = strtolower(trim($name));
+        if ($normalized === '') {
+            return null;
+        }
+
+        return District::query()
+            ->where('city_code', $cityCode)
+            ->whereRaw('LOWER(name) = ?', [$normalized])
+            ->first();
+    }
+
+    private function villageCollectionByDistrictCode(string $districtCode): Collection
+    {
+        return Village::query()
+            ->where('district_code', $districtCode)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn($village) => (object) [
+                'id' => $village->id,
+                'nama' => $village->name,
+            ]);
     }
 }

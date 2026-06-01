@@ -115,7 +115,7 @@ class UserController extends Controller
     {
         $this->checkSuperAdmin();
 
-        $provinsiList = Provinsi::orderBy('nama')->get();
+        $provinsiList = Provinsi::orderBy('name')->get();
         $sekolahList  = Sekolah::orderBy('nama')->get();
 
         return view('users.create', compact('provinsiList', 'sekolahList'));
@@ -131,7 +131,7 @@ class UserController extends Controller
             'email'                 => ['required', 'email', 'unique:users,email'],
             'password'              => ['required', 'string', 'min:8', 'confirmed'],
             'role'                  => ['required', 'in:superadmin,admin_wilayah,kepala_sekolah'],
-            'provinsi_id'           => ['nullable', 'exists:provinsi,id', 'required_if:role,admin_wilayah'],
+            'provinsi_id'           => ['nullable', 'exists:indonesia_provinces,id', 'required_if:role,admin_wilayah'],
             'sekolah_id'            => ['nullable', 'exists:sekolah,id', 'required_if:role,kepala_sekolah'],
         ], [
             'name.required'         => 'Nama wajib diisi.',
@@ -173,7 +173,7 @@ class UserController extends Controller
         $actor = $this->authorizeEditUser($user);
 
         $provinsiList = $actor->isSuperAdmin()
-            ? Provinsi::orderBy('nama')->get()
+            ? Provinsi::orderBy('name')->get()
             : collect();
 
         $sekolahList  = $actor->isSuperAdmin()
@@ -196,7 +196,7 @@ class UserController extends Controller
                 'email'                 => ['required', 'email', Rule::unique('users')->ignore($user->id)],
                 'password'              => ['nullable', 'string', 'min:8', 'confirmed'],
                 'role'                  => ['required', 'in:superadmin,admin_wilayah,kepala_sekolah'],
-                'provinsi_id'           => ['nullable', 'exists:provinsi,id', 'required_if:role,admin_wilayah'],
+                'provinsi_id'           => ['nullable', 'exists:indonesia_provinces,id', 'required_if:role,admin_wilayah'],
                 'sekolah_id'            => ['nullable', 'exists:sekolah,id', 'required_if:role,kepala_sekolah'],
             ], [
                 'name.required'         => 'Nama wajib diisi.',

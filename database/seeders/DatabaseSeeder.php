@@ -2,10 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Laravolt\Indonesia\Seeds\CitiesSeeder;
+use Laravolt\Indonesia\Seeds\DistrictsSeeder;
+use Laravolt\Indonesia\Seeds\ProvincesSeeder;
+use Laravolt\Indonesia\Seeds\VillagesSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,9 +20,10 @@ class DatabaseSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
         $this->call([
-            ProvinsiSeeder::class,
-            KotaKabupatenSeeder::class,
-            KecamatanSeeder::class,
+            ProvincesSeeder::class,
+            CitiesSeeder::class,
+            DistrictsSeeder::class,
+            VillagesSeeder::class,
             SekolahSeeder::class,
             UserSeeder::class,
             ProgramPendidikanSeeder::class,

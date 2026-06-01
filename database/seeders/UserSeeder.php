@@ -17,8 +17,8 @@ class UserSeeder extends Seeder
         User::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
-        $jakartaId  = Provinsi::where('kode', '31')->value('id');
-        $sulselId   = Provinsi::where('kode', '73')->value('id');
+        $jakartaId  = Provinsi::where('code', '31')->value('id');
+        $sulselId   = Provinsi::where('code', '73')->value('id');
 
         $sdMakassar = Sekolah::where('npsn', '40312156')->value('id');
         $smpJakarta = Sekolah::where('npsn', '20106955')->value('id');
@@ -99,4 +99,3 @@ class UserSeeder extends Seeder
         ]);
     }
 }
-

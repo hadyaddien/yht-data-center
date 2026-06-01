@@ -16,16 +16,16 @@ class SekolahSeeder extends Seeder
         Sekolah::truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
-        $jakarta  = Provinsi::where('kode', '31')->value('id');
-        $jawatim  = Provinsi::where('kode', '35')->value('id');
-        $sulsel   = Provinsi::where('kode', '73')->value('id');
-        $sulut    = Provinsi::where('kode', '71')->value('id');
+        $jakarta  = Provinsi::where('code', '31')->value('id');
+        $jawatim  = Provinsi::where('code', '35')->value('id');
+        $sulsel   = Provinsi::where('code', '73')->value('id');
+        $sulut    = Provinsi::where('code', '71')->value('id');
 
-        $jktSel   = KotaKabupaten::where('kode', '3171')->value('id');
-        $jktUt    = KotaKabupaten::where('kode', '3175')->value('id');
-        $surabaya = KotaKabupaten::where('kode', '3578')->value('id');
-        $makassar = KotaKabupaten::where('kode', '7371')->value('id');
-        $manado   = KotaKabupaten::where('kode', '7171')->value('id');
+        $jktSel   = KotaKabupaten::where('code', '3171')->value('id');
+        $jktUt    = KotaKabupaten::where('code', '3175')->value('id');
+        $surabaya = KotaKabupaten::where('code', '3578')->value('id');
+        $makassar = KotaKabupaten::where('code', '7371')->value('id');
+        $manado   = KotaKabupaten::where('code', '7171')->value('id');
 
         $sekolahData = [
             [

@@ -97,19 +97,103 @@ class DashboardController extends Controller
             'values' => array_map(fn($j) => (int) ($jenjangCounts[$j] ?? 0), $jenjangLabels),
         ];
 
-        $provinsiCounts = (clone $baseSekolahQuery)
-            ->join('provinsi', 'sekolah.provinsi_id', '=', 'provinsi.id')
-            ->select('provinsi.nama', DB::raw('COUNT(*) as total'))
-            ->groupBy('provinsi.nama')
+        $jenjangCardColors = [
+            'KB' => 'bg-pink-100 text-pink-700',
+            'TK' => 'bg-violet-100 text-violet-700',
+            'SD' => 'bg-blue-100 text-blue-700',
+            'SMP' => 'bg-emerald-100 text-emerald-700',
+            'SMA' => 'bg-amber-100 text-amber-700',
+            'SMK' => 'bg-rose-100 text-rose-700',
+        ];
+
+        $jenjangCards = collect($jenjangLabels)
+            ->map(fn($jenjang) => [
+                'label' => $jenjang,
+                'count' => (int) ($jenjangCounts[$jenjang] ?? 0),
+                'badge' => $jenjangCardColors[$jenjang] ?? 'bg-gray-100 text-gray-600',
+            ])
+            ->all();
+
+        $wilayahLabelExpr = "COALESCE(indonesia_provinces.name, 'Belum Ditentukan')";
+        $wilayahCounts = (clone $baseSekolahQuery)
+            ->leftJoin('indonesia_provinces', 'sekolah.provinsi_id', '=', 'indonesia_provinces.id')
+            ->selectRaw("{$wilayahLabelExpr} as nama, COUNT(*) as total")
+            ->groupBy(DB::raw($wilayahLabelExpr))
             ->orderByDesc('total')
             ->get();
 
-        $colors = ['#162040', '#f59e0b', '#10b981', '#e11d48', '#6366f1', '#0ea5e9'];
+        $colors = ['#162040', '#f59e0b', '#10b981', '#e11d48', '#6366f1', '#0ea5e9', '#14b8a6', '#f97316'];
+        $provinsiColors = [];
+        for ($i = 0; $i < $wilayahCounts->count(); $i++) {
+            $provinsiColors[] = $colors[$i % count($colors)];
+        }
+
         $provinsiData = [
-            'labels' => $provinsiCounts->pluck('nama')->toArray(),
-            'values' => $provinsiCounts->pluck('total')->map(fn($v) => (int) $v)->toArray(),
-            'colors' => array_slice($colors, 0, $provinsiCounts->count()),
+            'labels' => $wilayahCounts->pluck('nama')->toArray(),
+            'values' => $wilayahCounts->pluck('total')->map(fn($v) => (int) $v)->toArray(),
+            'colors' => $provinsiColors,
         ];
+
+        $maxWilayahCount = max(1, (int) ($wilayahCounts->max('total') ?? 0));
+        $wilayahSummary = $wilayahCounts
+            ->map(fn($item) => [
+                'label' => $item->nama,
+                'count' => (int) $item->total,
+                'percent' => round(((int) $item->total / $maxWilayahCount) * 100, 1),
+            ])
+            ->values()
+            ->all();
+
+        $akreditasiCounts = (clone $baseSekolahQuery)
+            ->select(['akreditasi_predikat', 'akreditasi_nilai'])
+            ->get()
+            ->map(function ($item) {
+                $predikat = strtoupper(trim((string) ($item->akreditasi_predikat ?? '')));
+                if ($predikat === '') {
+                    $nilai = $item->akreditasi_nilai;
+                    if ($nilai === null) {
+                        return 'Belum Akreditasi';
+                    }
+
+                    return match (true) {
+                        $nilai >= 91 => 'Unggul',
+                        $nilai >= 71 => 'Baik Sekali',
+                        $nilai >= 51 => 'Baik',
+                        default => 'Cukup',
+                    };
+                }
+
+                return match ($predikat) {
+                    'UNGGUL' => 'Unggul',
+                    'BAIK SEKALI' => 'Baik Sekali',
+                    'BAIK' => 'Baik',
+                    'CUKUP' => 'Cukup',
+                    default => 'Belum Akreditasi',
+                };
+            })
+            ->countBy();
+
+        $akreditasiOrder = ['Unggul', 'Baik Sekali', 'Baik', 'Cukup', 'Belum Akreditasi'];
+        $akreditasiSummary = collect($akreditasiOrder)
+            ->map(fn($label) => [
+                'label' => $label,
+                'count' => (int) ($akreditasiCounts[$label] ?? 0),
+            ])
+            ->filter(fn($item) => $item['count'] > 0)
+            ->values();
+
+        if ($akreditasiSummary->isEmpty()) {
+            $akreditasiSummary = collect([
+                ['label' => 'Belum Akreditasi', 'count' => 0],
+            ]);
+        }
+
+        $maxAkreditasiCount = max(1, (int) $akreditasiSummary->max('count'));
+        $akreditasiSummary = $akreditasiSummary
+            ->map(fn($item) => $item + [
+                'percent' => round(($item['count'] / $maxAkreditasiCount) * 100, 1),
+            ])
+            ->all();
 
         $badgeColors = [
             'KB'  => 'bg-gray-100 text-gray-600',
@@ -132,6 +216,15 @@ class DashboardController extends Controller
                 'color'    => $badgeColors[$s->jenjang] ?? 'bg-gray-100 text-gray-600',
             ])->toArray();
 
-        return view('dashboard', compact('stats', 'jenjangData', 'provinsiData', 'recentSchools', 'komposisiOrtu'));
+        return view('dashboard', compact(
+            'stats',
+            'jenjangData',
+            'provinsiData',
+            'recentSchools',
+            'komposisiOrtu',
+            'jenjangCards',
+            'wilayahSummary',
+            'akreditasiSummary'
+        ));
     }
 }
