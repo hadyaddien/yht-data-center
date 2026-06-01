@@ -148,7 +148,52 @@ class SdmSeeder extends Seeder
         foreach ($sekolahData as $namaSekolah => $data) {
             $sekolah = Sekolah::where('nama', $namaSekolah)->first();
             if ($sekolah) {
-                Sdm::create(array_merge(['sekolah_id' => $sekolah->id, 'tahun_ajaran' => $tahun], $data));
+                $numericFields = [
+                    'guru_pns',
+                    'guru_honorer',
+                    'guru_p3k',
+                    'karyawan_pns',
+                    'karyawan_honorer',
+                    'karyawan_p3k',
+                    'jumlah_rombel',
+                    'jumlah_murid_total',
+                    'jumlah_murid_laki',
+                    'jumlah_murid_perempuan',
+                    'murid_ortu_tni_al',
+                    'murid_ortu_tni',
+                    'murid_ortu_polisi',
+                    'murid_ortu_pns',
+                    'murid_ortu_pengusaha',
+                    'murid_ortu_wiraswasta',
+                    'murid_ortu_buruh',
+                    'murid_ortu_guru',
+                    'guru_bersertifikasi',
+                    'guru_s1_keatas',
+                ];
+
+                foreach ($numericFields as $field) {
+                    $data[$field] = (int) ($data[$field] ?? 0);
+                }
+
+                $knownOrtuTotal =
+                    $data['murid_ortu_tni_al'] +
+                    $data['murid_ortu_tni'] +
+                    $data['murid_ortu_polisi'] +
+                    $data['murid_ortu_pns'] +
+                    $data['murid_ortu_pengusaha'] +
+                    $data['murid_ortu_wiraswasta'] +
+                    $data['murid_ortu_buruh'] +
+                    $data['murid_ortu_guru'];
+
+                // Selaraskan seeder dengan aturan terbaru: "Lainnya" otomatis dari sisa komposisi.
+                $data['murid_ortu_lainnya_label'] = null;
+                $data['murid_ortu_lainnya_jumlah'] = max(0, $data['jumlah_murid_total'] - $knownOrtuTotal);
+
+                Sdm::create(array_merge([
+                    'sekolah_id' => $sekolah->id,
+                    'tahun_ajaran' => $tahun,
+                    'updated_by' => 1,
+                ], $data));
             }
         }
     }

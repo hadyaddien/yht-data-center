@@ -102,6 +102,13 @@
                 border-left: 3pt solid #162040;
             }
 
+            .subsection-title {
+                font-size: 8pt;
+                font-weight: 700;
+                color: #162040;
+                margin: 7pt 0 3pt;
+            }
+
             table.print-table {
                 width: 100%;
                 border-collapse: collapse;
@@ -545,6 +552,8 @@
                 {{-- ── SDM ────────────────────────────────── --}}
                 <div class="print-section" data-section="sdm">
                     <div class="section-title">SDM</div>
+
+                    <div class="subsection-title">Sub Bagian Guru</div>
                     <table class="print-table">
                         <tr>
                             <td>Jumlah Guru</td>
@@ -570,6 +579,10 @@
                             <td>Jumlah Rombel</td>
                             <td>{{ $sdm ? $sdm->jumlah_rombel ?? '-' : '-' }}</td>
                         </tr>
+                    </table>
+
+                    <div class="subsection-title">Sub Bagian Murid (Ortu Murid)</div>
+                    <table class="print-table">
                         <tr>
                             <td>Jumlah Murid</td>
                             <td>{{ $sdm ? $muridTotal : '-' }}</td>
