@@ -69,11 +69,42 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
         </div>
+        <div class="relative">
+            <select name="lokasi" onchange="this.form.submit()"
+                class="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2.5 pr-9 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#162040]/20 focus:border-[#162040] cursor-pointer">
+                <option value="">Semua Lokasi</option>
+                @foreach ($provinsiList as $prov)
+                    <option value="{{ $prov->id }}" {{ request('lokasi') == $prov->id ? 'selected' : '' }}>
+                        {{ $prov->nama }}</option>
+                @endforeach
+            </select>
+            <svg class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </div>
+        <div class="relative">
+            <select name="akreditasi" onchange="this.form.submit()"
+                class="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2.5 pr-9 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#162040]/20 focus:border-[#162040] cursor-pointer">
+                <option value="">Semua Akreditasi</option>
+                <option value="unggul" {{ request('akreditasi') === 'unggul' ? 'selected' : '' }}>UNGGUL</option>
+                <option value="baik_sekali" {{ request('akreditasi') === 'baik_sekali' ? 'selected' : '' }}>BAIK SEKALI
+                </option>
+                <option value="baik" {{ request('akreditasi') === 'baik' ? 'selected' : '' }}>BAIK</option>
+                <option value="cukup" {{ request('akreditasi') === 'cukup' ? 'selected' : '' }}>CUKUP</option>
+                <option value="belum" {{ request('akreditasi') === 'belum' ? 'selected' : '' }}>Belum Terakreditasi
+                </option>
+            </select>
+            <svg class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </div>
         <button type="submit"
             class="px-4 py-2.5 bg-[#162040] text-white text-sm font-semibold rounded-lg hover:bg-[#1e2f5a] transition-colors shadow-sm">
             Cari
         </button>
-        @if (request('search') || request('jenjang'))
+        @if (request('search') || request('jenjang') || request('lokasi') || request('akreditasi'))
             <a href="{{ route('sekolah.index') }}"
                 class="px-4 py-2.5 bg-gray-100 text-gray-600 text-sm font-semibold rounded-lg hover:bg-gray-200 transition-colors">
                 Reset

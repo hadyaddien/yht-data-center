@@ -13,9 +13,20 @@
 
 @php
     $isEdit = isset($sekolah) && $sekolah->exists;
+    $moduleOnly = $moduleOnly ?? null;
+    $moduleLabelMap = [
+        'program' => 'Program Pendidikan',
+        'teknologi' => 'Teknologi Pembelajaran',
+        'sarpras' => 'Sarana Prasarana',
+        'sdm' => 'SDM',
+    ];
+    $moduleLabel = $moduleLabelMap[$moduleOnly] ?? null;
     $v = fn(string $field, $default = '') => old($field, $isEdit ? $sekolah->$field ?? $default : $default);
     $kecamatanList = $kecamatanList ?? collect();
     $kelurahanList = $kelurahanList ?? collect();
+    $kotaList = $kotaList ?? collect();
+    $tahunList = $tahunList ?? range(date('Y'), 1900);
+    $provinsiList = $provinsiList ?? collect();
     $pp = $programPendidikan ?? null;
     $pv_pp = fn(string $f, $d = '') => old("pp.$f", $pp?->$f ?? $d);
     $tp = $teknologiPembelajaran ?? null;
@@ -148,37 +159,39 @@
         @method('PUT')
     @endif
 
-    {{-- TABS --}}
-    <div class="border-b border-gray-100 mb-0 -mx-6 px-6">
-        <nav class="flex gap-0 overflow-x-auto" id="tab-nav">
-            @php
-                $tabs = [
-                    'identitas' => 'Identitas',
-                    'program' => 'Program Pendidikan',
-                    'teknologi' => 'Teknologi',
-                    'sarpras' => 'Sarana Prasarana',
-                    'sdm' => 'SDM',
-                ];
-            @endphp
-            @foreach ($tabs as $key => $label)
+    @if (!$moduleOnly)
+        {{-- TABS --}}
+        <div class="border-b border-gray-100 mb-0 -mx-6 px-6">
+            <nav class="flex gap-0 overflow-x-auto" id="tab-nav">
                 @php
-                    $tabAllowedOnCreate = in_array($key, ['identitas', 'program', 'teknologi', 'sarpras', 'sdm']);
-                    $tabDisabled = !$tabAllowedOnCreate && !$isEdit;
+                    $tabs = [
+                        'identitas' => 'Identitas',
+                        'program' => 'Program Pendidikan',
+                        'teknologi' => 'Teknologi',
+                        'sarpras' => 'Sarana Prasarana',
+                        'sdm' => 'SDM',
+                    ];
                 @endphp
-                <button type="button" onclick="switchTab('{{ $key }}')" id="tab-btn-{{ $key }}"
-                    @if ($tabDisabled) disabled @endif
-                    class="tab-btn flex-shrink-0 px-4 py-2.5 text-sm border-b-2 transition-all whitespace-nowrap
+                @foreach ($tabs as $key => $label)
+                    @php
+                        $tabAllowedOnCreate = in_array($key, ['identitas', 'program', 'teknologi', 'sarpras', 'sdm']);
+                        $tabDisabled = !$tabAllowedOnCreate && !$isEdit;
+                    @endphp
+                    <button type="button" onclick="switchTab('{{ $key }}')" id="tab-btn-{{ $key }}"
+                        @if ($tabDisabled) disabled @endif
+                        class="tab-btn flex-shrink-0 px-4 py-2.5 text-sm border-b-2 transition-all whitespace-nowrap
                     {{ $key === 'identitas' ? 'border-[#162040] bg-[#eef3f9] text-[#162040] font-semibold rounded-t-lg' : 'border-transparent text-gray-500 font-medium hover:text-gray-700 hover:bg-gray-50 rounded-t-lg' }}
                     {{ $tabDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer' }}">
-                    {{ $label }}
-                </button>
-            @endforeach
-        </nav>
-    </div>
-    <br>
+                        {{ $label }}
+                    </button>
+                @endforeach
+            </nav>
+        </div>
+        <br>
+    @endif
 
     {{-- TAB: IDENTITAS --}}
-    <div id="tab-identitas" class="tab-panel space-y-0">
+    <div id="tab-identitas" class="{{ $moduleOnly && $moduleOnly !== 'identitas' ? 'hidden' : 'tab-panel space-y-0' }}">
 
         {{-- IDENTITAS SEKOLAH --}}
         <div class="form-section">
@@ -579,7 +592,8 @@
     </div>{{-- end tab-identitas --}}
 
     {{-- TAB: PROGRAM PENDIDIKAN --}}
-    <div id="tab-program" class="tab-panel hidden">
+    <div id="tab-program"
+        class="{{ $moduleOnly ? ($moduleOnly === 'program' ? 'tab-panel' : 'hidden') : 'tab-panel hidden' }}">
 
         {{-- VISI & MISI --}}
         <div class="form-section">
@@ -922,7 +936,8 @@
     </div>{{-- end tab-program --}}
 
     {{-- TAB: TEKNOLOGI --}}
-    <div id="tab-teknologi" class="tab-panel hidden">
+    <div id="tab-teknologi"
+        class="{{ $moduleOnly ? ($moduleOnly === 'teknologi' ? 'tab-panel' : 'hidden') : 'tab-panel hidden' }}">
         <div class="form-section">
             <div class="form-section-title">
                 <span class="form-section-bar"></span>
@@ -1249,7 +1264,8 @@
     </div>{{-- end tab-teknologi --}}
 
     {{-- TAB: SARANA PRASARANA --}}
-    <div id="tab-sarpras" class="tab-panel hidden">
+    <div id="tab-sarpras"
+        class="{{ $moduleOnly ? ($moduleOnly === 'sarpras' ? 'tab-panel' : 'hidden') : 'tab-panel hidden' }}">
 
         {{-- KONDISI SARANA PRASARANA --}}
         <div class="form-section">
@@ -1393,7 +1409,8 @@
 
 
     {{-- TAB: SDM --}}
-    <div id="tab-sdm" class="tab-panel hidden">
+    <div id="tab-sdm"
+        class="{{ $moduleOnly ? ($moduleOnly === 'sdm' ? 'tab-panel' : 'hidden') : 'tab-panel hidden' }}">
 
         {{-- TENAGA PENDIDIK & KEPENDIDIKAN --}}
         <div class="form-section">

@@ -30,8 +30,6 @@
             @include('sekolah._form', [
                 'action' => route('sekolah.update', $sekolah),
                 'method' => 'PUT',
-                'kecamatanList' => $kecamatanList,
-                'kelurahanList' => $kelurahanList,
             ])
         </div>
 

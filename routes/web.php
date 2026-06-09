@@ -36,10 +36,22 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/kecamatan', [SekolahController::class, 'kecamatanByKota'])->name('api.kecamatan');
     Route::get('/api/kelurahan', [SekolahController::class, 'kelurahanByKecamatan'])->name('api.kelurahan');
     Route::get('/program-pendidikan', [ProgramPendidikanController::class, 'index'])->name('program.index');
-    Route::get('/teknologi', [TeknologiController::class,        'index'])->name('teknologi.index');
-    Route::get('/sarana-prasarana', [SarprasController::class,          'index'])->name('sarpras.index');
-    Route::get('/sdm', [SdmController::class,              'index'])->name('sdm.index');
-    Route::get('/rekap-analisis', [RekapController::class,            'index'])->name('rekap.index');
+    Route::get('/program-pendidikan/{sekolah}', [ProgramPendidikanController::class, 'show'])->name('program.show');
+    Route::get('/program-pendidikan/{sekolah}/edit', [ProgramPendidikanController::class, 'edit'])->name('program.edit');
+    Route::put('/program-pendidikan/{sekolah}', [ProgramPendidikanController::class, 'update'])->name('program.update');
+    Route::get('/teknologi', [TeknologiController::class, 'index'])->name('teknologi.index');
+    Route::get('/teknologi/{sekolah}', [TeknologiController::class, 'show'])->name('teknologi.show');
+    Route::get('/teknologi/{sekolah}/edit', [TeknologiController::class, 'edit'])->name('teknologi.edit');
+    Route::put('/teknologi/{sekolah}', [TeknologiController::class, 'update'])->name('teknologi.update');
+    Route::get('/sarana-prasarana', [SarprasController::class, 'index'])->name('sarpras.index');
+    Route::get('/sarana-prasarana/{sekolah}', [SarprasController::class, 'show'])->name('sarpras.show');
+    Route::get('/sarana-prasarana/{sekolah}/edit', [SarprasController::class, 'edit'])->name('sarpras.edit');
+    Route::put('/sarana-prasarana/{sekolah}', [SarprasController::class, 'update'])->name('sarpras.update');
+    Route::get('/sdm', [SdmController::class, 'index'])->name('sdm.index');
+    Route::get('/sdm/{sekolah}', [SdmController::class, 'show'])->name('sdm.show');
+    Route::get('/sdm/{sekolah}/edit', [SdmController::class, 'edit'])->name('sdm.edit');
+    Route::put('/sdm/{sekolah}', [SdmController::class, 'update'])->name('sdm.update');
+    Route::get('/rekap-analisis', [RekapController::class, 'index'])->name('rekap.index');
     Route::get('/cetak-laporan', [CetakLaporanController::class,     'index'])->name('cetak-laporan.index');
 
     // Profile
